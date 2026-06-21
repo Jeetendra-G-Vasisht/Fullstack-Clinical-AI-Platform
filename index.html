@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — kBuddhi AI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="logo">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C9.243 2 7 4.243 7 7v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7c0-2.757-2.243-5-5-5zm0 2c1.654 0 3 1.346 3 3v3H9V7c0-1.654 1.346-3 3-3zm0 10a2 2 0 110 4 2 2 0 010-4z"/>
+        </svg>
+      </div>
+      <h1>kBuddhi AI</h1>
+      <p>Sign in to your secure portal</p>
+    </div>
+
+    <div id="alert-error" class="alert alert-error" role="alert"></div>
+
+    <form id="login-form" novalidate>
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+        <span class="field-error"></span>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" required />
+        <span class="field-error"></span>
+      </div>
+      <div style="text-align:right; margin-top:-8px; margin-bottom:16px;">
+        <a href="forgot-password.html" style="font-size:0.82rem; color:#2563eb; font-weight:600; text-decoration:none;">Forgot password?</a>
+      </div>
+      <button type="submit" class="btn btn-primary" id="login-btn">Sign In</button>
+    </form>
+
+    <div class="footer-link">Don't have an account? <a href="register.html">Create account</a></div>
+  </div>
+  <p class="hipaa-notice">&#128274; HIPAA Compliant &nbsp;·&nbsp; Protected under federal privacy regulations</p>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    const emailEl = document.getElementById("email");
+    const pwdEl   = document.getElementById("password");
+    emailEl.addEventListener("input", () => clearError(emailEl));
+    pwdEl.addEventListener("input",   () => clearError(pwdEl));
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert("alert-error");
+      let valid = true;
+      const email = emailEl.value.trim();
+      const pwd   = pwdEl.value;
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError(emailEl, "Enter a valid email."); valid = false; }
+      if (!pwd) { showError(pwdEl, "Password is required."); valid = false; }
+      if (!valid) return;
+      const btn = document.getElementById("login-btn");
+      btn.disabled = true; btn.textContent = "Signing in…";
+      try {
+        await loginUser(email, pwd);
+        window.location.href = "verify.html";
+      } catch (err) {
+        let msg = cognitoErrorMessage(err);
+        if (err.status === 401) msg = "Incorrect email or password.";
+        if (err.status === 403) { sessionStorage.setItem("confirm_email", email); window.location.href = "confirm.html"; return; }
+        showAlert("alert-error", msg);
+        btn.disabled = false; btn.textContent = "Sign In";
+      }
+    });
+  </script>
+</body>
+</html>

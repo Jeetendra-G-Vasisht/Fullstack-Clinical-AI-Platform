@@ -1,0 +1,25 @@
+{
+  "name": "kbuddhiai-infra",
+  "version": "1.0.0",
+  "description": "kBuddhi AI — AWS CDK infrastructure (Option C, minimised cost)",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "deploy:all": "npm run build && cdk deploy --all --require-approval never",
+    "deploy:main": "npm run build && cdk deploy KbuddhiStack --require-approval never --context certArn=arn:aws:acm:us-east-1:699092321120:certificate/f70fcda3-09ec-4c4e-bb9e-ac3720cb69b4",
+    "deploy:cert": "npm run build && cdk deploy KbuddhiCertStack --require-approval never",
+    "diff": "npm run build && cdk diff --all",
+    "synth": "npm run build && cdk synth --all",
+    "destroy": "cdk destroy --all"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "aws-cdk": "^2.180.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.180.0",
+    "constructs": "^10.4.0"
+  }
+}

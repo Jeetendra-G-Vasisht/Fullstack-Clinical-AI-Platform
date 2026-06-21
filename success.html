@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Access Granted — kBuddhi AI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="success-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h1>Access granted</h1>
+      <p>You are now securely authenticated</p>
+    </div>
+    <div class="user-badge">
+      Welcome back, <strong id="user-name">User</strong><br/>
+      <span id="user-email" style="font-weight:400; font-size:0.8rem; opacity:0.8;"></span>
+    </div>
+    <a href="upload.html" class="btn btn-primary" style="text-decoration:none; display:block; text-align:center;">Go to File Upload &rarr;</a>
+    <button class="btn btn-outline" onclick="signOut()">Sign Out</button>
+  </div>
+  <p class="hipaa-notice">&#128274; HIPAA Compliant &nbsp;·&nbsp; Always sign out when done</p>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    const user = getSessionUser();
+    if (!user) { window.location.href = "index.html"; }
+    else {
+      document.getElementById("user-name").textContent  = user.name  || user.email || "User";
+      document.getElementById("user-email").textContent = user.email || "";
+    }
+  </script>
+</body>
+</html>

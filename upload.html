@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Files — kBuddhi AI</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Inline guard — SVG size must not depend on external CSS caching */
+    .mode-select { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; margin-bottom: 20px !important; }
+    .mode-card svg, .upload-area svg { display: block !important; margin: 0 auto 10px !important; }
+  </style>
+</head>
+<body>
+
+  <div class="card upload-card">
+    <div class="portal-header">
+      <span class="portal-brand">kBuddhi AI</span>
+      <span class="portal-user" id="user-name">User</span>
+      <button class="portal-sign-out" onclick="signOut()">Sign Out</button>
+    </div>
+
+    <div id="alert-error"   class="alert alert-error"   role="alert"></div>
+    <div id="alert-success" class="alert alert-success" role="alert"></div>
+
+    <!-- Mode selection -->
+    <div class="mode-select">
+      <div class="mode-card active" id="mode-upload" onclick="selectMode('upload')">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p class="mode-title">Upload Files</p>
+        <p class="mode-desc">Upload new files from your computer</p>
+      </div>
+      <div class="mode-card" id="mode-stored" onclick="selectMode('stored')">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        <p class="mode-title">Load Stored Files</p>
+        <p class="mode-desc">Browse and load files already in storage</p>
+      </div>
+    </div>
+
+    <!-- Upload panel -->
+    <div id="upload-panel">
+      <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p class="ua-primary">Click to choose files, or drag &amp; drop here</p>
+        <p class="ua-secondary">Supports Excel, PDF, Word, CSV, TXT — multiple files at once</p>
+        <div class="file-count" id="file-count"></div>
+      </div>
+      <input type="file" id="file-input" multiple />
+      <ul class="file-list" id="file-list"></ul>
+      <div class="progress-bar-wrap" id="progress-wrap">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+      <div class="upload-status" id="upload-status"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="upload-btn" disabled>Upload Files</button>
+      </div>
+    </div>
+
+    <!-- Load stored files panel -->
+    <div class="stored-panel" id="stored-panel">
+      <div id="stored-loading" class="stored-loading" style="display:none;">Loading files from storage…</div>
+      <div id="stored-empty"   class="stored-empty"   style="display:none;">No files found in storage.</div>
+      <div id="stored-actions-row" class="stored-actions" style="display:none;">
+        <a onclick="storedSelectAll(true)">Select all</a>
+        <a onclick="storedSelectAll(false)">Deselect all</a>
+      </div>
+      <ul class="stored-list" id="stored-list" style="display:none;"></ul>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-primary" id="stored-load-btn" disabled onclick="loadSelectedStored()">Load Selected Files</button>
+      </div>
+    </div>
+
+    <div class="chat-section" id="chat-section">
+      <h2>Ask questions about your files</h2>
+
+      <!-- Tab buttons -->
+      <div class="chat-tabs">
+        <button class="chat-tab-btn active" id="tab-btn-perfile" onclick="switchTab('perfile')">Per File Chat</button>
+        <button class="chat-tab-btn"        id="tab-btn-allfiles" onclick="switchTab('allfiles')">Ask All Files</button>
+      </div>
+
+      <!-- Tab 1: Per File -->
+      <div class="chat-tab-panel active" id="tab-perfile">
+        <p class="chat-file-label">Select a file to chat with:</p>
+        <select class="chat-file-select" id="chat-file-select">
+          <option value="">— select a file —</option>
+        </select>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="textarea-with-mic">
+          <textarea class="chat-textarea" id="chat-input" placeholder="Type your question here… (Enter to send, Shift+Enter for new line)" disabled rows="3"></textarea>
+          <button class="mic-btn" id="mic-perfile" title="Click to speak" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93V21h2v-2.07A8.001 8.001 0 0 0 20 11h-2a6 6 0 0 1-12 0H4a8.001 8.001 0 0 0 7 7.93z"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-primary chat-send-btn" id="chat-send" disabled>Send</button>
+        <p class="chat-hint">Powered by GPT-4o mini. Your API key stays server-side.</p>
+      </div>
+
+      <!-- Tab 2: Ask All Files -->
+      <div class="chat-tab-panel" id="tab-allfiles">
+        <div class="all-files-info" id="all-files-info">Upload files above to ask questions across all of them at once.</div>
+        <div class="textarea-with-mic">
+          <textarea class="chat-textarea" id="all-input" placeholder="Ask a question that spans all your uploaded files — trends, comparisons, lookups across records…" rows="4"></textarea>
+          <button class="mic-btn" id="mic-all" title="Click to speak" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93V21h2v-2.07A8.001 8.001 0 0 0 20 11h-2a6 6 0 0 1-12 0H4a8.001 8.001 0 0 0 7 7.93z"/></svg>
+          </button>
+        </div>
+        <div class="all-btn-row">
+          <button class="btn btn-primary" id="all-send-combined">Combined Answer</button>
+          <button class="btn btn-outline" id="all-send-perfile">Ask Each File</button>
+        </div>
+        <div id="all-results"></div>
+        <p class="chat-hint">
+          <strong>Combined Answer</strong> — all files are merged and the AI reasons across all of them at once. Best for cross-file questions.<br>
+          <strong>Ask Each File</strong> — each file is queried independently in parallel. Best for per-file comparisons.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <p class="hipaa-notice">
+    <span class="badge">&#128274; HIPAA Compliant</span><br/>
+    Files are uploaded securely over HTTPS. Always sign out when done.
+  </p>
+
+  <!-- config.js is generated by CDK and supplies APP_CONFIG with live API URLs -->
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // API endpoints are read from config.js (generated by CDK at deploy time)
+    var API_ENDPOINT  = (window.APP_CONFIG ? window.APP_CONFIG.API_BASE_URL : "") + "/get-upload-url";
+    var CHAT_ENDPOINT = (window.APP_CONFIG ? window.APP_CONFIG.API_BASE_URL : "") + "/chat";
+
+    var user = getSessionUser();
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("user-name").textContent = user.name || user.email || "User";
+    }
+
+    /* ── Mode switching ────────────────────────────────────────────── */
+    function selectMode(mode) {
+      var isUpload = mode === "upload";
+      document.getElementById("mode-upload").classList.toggle("active", isUpload);
+      document.getElementById("mode-stored").classList.toggle("active", !isUpload);
+      document.getElementById("upload-panel").style.display  = isUpload ? "block" : "none";
+      document.getElementById("stored-panel").style.display  = isUpload ? "none"  : "block";
+      if (!isUpload) fetchStoredFiles();
+    }
+
+    /* ── Load stored files ─────────────────────────────────────────── */
+    var storedFilesCache = null;
+
+    function fetchStoredFiles() {
+      if (storedFilesCache) return; // already loaded
+      var loadingEl  = document.getElementById("stored-loading");
+      var emptyEl    = document.getElementById("stored-empty");
+      var listEl     = document.getElementById("stored-list");
+      var actionsRow = document.getElementById("stored-actions-row");
+      var loadBtn    = document.getElementById("stored-load-btn");
+
+      loadingEl.style.display = "block";
+      emptyEl.style.display   = "none";
+      listEl.style.display    = "none";
+      actionsRow.style.display= "none";
+
+      fetch(CHAT_ENDPOINT, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list_files", user_sub: user.user_sub }),
+      }).then(function(res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      }).then(function(data) {
+        loadingEl.style.display = "none";
+        var files = data.files || [];
+        storedFilesCache = files;
+        if (!files.length) { emptyEl.style.display = "block"; return; }
+
+        listEl.innerHTML = "";
+        files.forEach(function(f) {
+          var li = document.createElement("li");
+          li.innerHTML =
+            "<input type='checkbox' class='stored-cb' data-key='" + f.key + "' data-name='" + f.name + "'>" +
+            "<span class='sl-name' title='" + f.name + "'>" + f.name + "</span>" +
+            "<span class='sl-meta'>" + formatSize(f.size) + " &nbsp;·&nbsp; " + f.last_modified + "</span>";
+          li.querySelector(".stored-cb").addEventListener("change", updateStoredLoadBtn);
+          li.addEventListener("click", function(e) {
+            if (e.target.tagName !== "INPUT") {
+              var cb = li.querySelector(".stored-cb");
+              cb.checked = !cb.checked;
+              updateStoredLoadBtn();
+            }
+          });
+          listEl.appendChild(li);
+        });
+        listEl.style.display    = "block";
+        actionsRow.style.display= "flex";
+      }).catch(function(err) {
+        loadingEl.style.display = "none";
+        emptyEl.textContent = "Could not load files. Please try again.";
+        emptyEl.style.display = "block";
+        console.error("List files error:", err);
+      });
+    }
+
+    function updateStoredLoadBtn() {
+      var checked = document.querySelectorAll(".stored-cb:checked").length;
+      document.getElementById("stored-load-btn").disabled = checked === 0;
+    }
+
+    function storedSelectAll(select) {
+      document.querySelectorAll(".stored-cb").forEach(function(cb) { cb.checked = select; });
+      updateStoredLoadBtn();
+    }
+
+    function loadSelectedStored() {
+      var checked = document.querySelectorAll(".stored-cb:checked");
+      if (!checked.length) return;
+      var newKeys = [];
+      checked.forEach(function(cb) {
+        var key  = cb.getAttribute("data-key");
+        var name = cb.getAttribute("data-name");
+        if (!uploadedKeys.find(function(f) { return f.key === key; })) {
+          newKeys.push({ key: key, name: name });
+        }
+      });
+      if (!newKeys.length) {
+        // all already loaded — just show chat
+        document.getElementById("chat-section").style.display = "block";
+        document.getElementById("chat-section").scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+      uploadedKeys = uploadedKeys.concat(newKeys);
+      refreshChatDropdown();
+      updateAllFilesInfo();
+      document.getElementById("chat-section").style.display = "block";
+      // Auto-open first newly loaded file in Per File tab
+      switchTab("perfile");
+      startChatWith(newKeys[0].key, newKeys[0].name);
+    }
+
+    var fileInput    = document.getElementById("file-input");
+    var dropZone     = document.getElementById("drop-zone");
+    var fileCountEl  = document.getElementById("file-count");
+    var fileListEl   = document.getElementById("file-list");
+    var uploadBtn    = document.getElementById("upload-btn");
+    var progressWrap = document.getElementById("progress-wrap");
+    var progressBar  = document.getElementById("progress-bar");
+    var uploadStatus = document.getElementById("upload-status");
+
+    var selectedFiles = [];
+    var uploadedKeys  = [];
+
+    function formatSize(bytes) {
+      if (bytes < 1024)    return bytes + " B";
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / 1048576).toFixed(1) + " MB";
+    }
+
+    function setFiles(fileList) {
+      selectedFiles = Array.from(fileList);
+      hideAlert("alert-error");
+      hideAlert("alert-success");
+      uploadStatus.textContent = "";
+      fileCountEl.textContent  = selectedFiles.length === 1 ? "1 file selected" : selectedFiles.length + " files selected";
+      fileListEl.innerHTML = "";
+      selectedFiles.forEach(function(f, i) {
+        var li = document.createElement("li");
+        li.id = "file-row-" + i;
+        li.innerHTML = "<span class=\"fname\" title=\"" + f.name + "\">" + f.name + "</span><span class=\"fsize\">" + formatSize(f.size) + "</span><span class=\"fstatus pending\" id=\"fstatus-" + i + "\">Pending</span>";
+        fileListEl.appendChild(li);
+      });
+      fileListEl.style.display = selectedFiles.length ? "block" : "none";
+      uploadBtn.disabled = selectedFiles.length === 0;
+    }
+
+    fileInput.addEventListener("change", function() { if (fileInput.files.length) setFiles(fileInput.files); });
+    dropZone.addEventListener("dragover",  function(e) { e.preventDefault(); dropZone.classList.add("drag-over"); });
+    dropZone.addEventListener("dragleave", function()  { dropZone.classList.remove("drag-over"); });
+    dropZone.addEventListener("drop", function(e) {
+      e.preventDefault(); dropZone.classList.remove("drag-over");
+      if (e.dataTransfer.files.length) setFiles(e.dataTransfer.files);
+    });
+
+    async function uploadOne(file, index) {
+      var statusEl = document.getElementById("fstatus-" + index);
+      statusEl.textContent = "Uploading...";
+      statusEl.className   = "fstatus uploading";
+
+      var res = await fetch(API_ENDPOINT, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, user_sub: user.user_sub }),
+      });
+      if (!res.ok) throw new Error("Could not get upload URL for " + file.name);
+      var data = await res.json();
+      var upload_url = data.upload_url;
+      var fields = data.fields;
+      var key = data.key;
+
+      var formData = new FormData();
+      Object.entries(fields).forEach(function(entry) { formData.append(entry[0], entry[1]); });
+      formData.append("file", file);
+
+      var uploadRes = await fetch(upload_url, { method: "POST", body: formData });
+      if (!uploadRes.ok) throw new Error("S3 rejected " + file.name + " (" + uploadRes.status + ")");
+
+      statusEl.textContent = "Chat";
+      statusEl.className   = "fstatus done";
+      statusEl.title       = "Click to chat about this file";
+      statusEl.onclick     = function() { startChatWith(key, file.name); };
+
+      return key;
+    }
+
+    uploadBtn.addEventListener("click", async function() {
+      if (!selectedFiles.length) return;
+      uploadBtn.disabled = true;
+      hideAlert("alert-error"); hideAlert("alert-success");
+      progressWrap.style.display = "block";
+      progressBar.style.width    = "0%";
+
+      var done = 0;
+      var errors  = [];
+      var newKeys = [];
+
+      for (var i = 0; i < selectedFiles.length; i++) {
+        uploadStatus.textContent = "Uploading " + (i + 1) + " of " + selectedFiles.length + "...";
+        try {
+          var key = await uploadOne(selectedFiles[i], i);
+          newKeys.push({ key: key, name: selectedFiles[i].name });
+          done++;
+        } catch (err) {
+          errors.push(selectedFiles[i].name);
+          var statusEl = document.getElementById("fstatus-" + i);
+          statusEl.textContent = "Failed";
+          statusEl.className   = "fstatus error";
+          console.error("Upload error:", err);
+        }
+        progressBar.style.width = Math.round(((i + 1) / selectedFiles.length) * 100) + "%";
+      }
+
+      uploadStatus.textContent = "";
+
+      if (errors.length === 0) {
+        showAlert("alert-success", done === 1 ? "1 file uploaded. Click Chat next to it to ask questions." : done + " files uploaded. Click Chat next to any file to ask questions.");
+        fileInput.value = ""; fileCountEl.textContent = ""; uploadBtn.disabled = true;
+        setTimeout(function() { progressWrap.style.display = "none"; progressBar.style.width = "0%"; }, 1500);
+      } else {
+        showAlert("alert-error", errors.length + " file(s) failed: " + errors.join(", "));
+        uploadBtn.disabled = false;
+      }
+
+      if (newKeys.length) {
+        uploadedKeys = uploadedKeys.concat(newKeys);
+        refreshChatDropdown();
+        document.getElementById("chat-section").style.display = "block";
+        if (newKeys.length === 1) startChatWith(newKeys[0].key, newKeys[0].name);
+      }
+    });
+
+    var chatSection  = document.getElementById("chat-section");
+    var chatSelect   = document.getElementById("chat-file-select");
+    var chatMessages = document.getElementById("chat-messages");
+    var chatInput    = document.getElementById("chat-input");
+    var chatSend     = document.getElementById("chat-send");
+    var allInput          = document.getElementById("all-input");
+    var allSendCombined   = document.getElementById("all-send-combined");
+    var allSendPerFile    = document.getElementById("all-send-perfile");
+    var allResults        = document.getElementById("all-results");
+    var allFilesInfo      = document.getElementById("all-files-info");
+
+    var currentKey         = null;
+    var chatHistory        = [];
+    var perFileChatHistory = {};
+
+    /* ── Tab switching ─────────────────────────────────────────────── */
+    function switchTab(tab) {
+      document.getElementById("tab-perfile").classList.toggle("active", tab === "perfile");
+      document.getElementById("tab-allfiles").classList.toggle("active", tab === "allfiles");
+      document.getElementById("tab-btn-perfile").classList.toggle("active", tab === "perfile");
+      document.getElementById("tab-btn-allfiles").classList.toggle("active", tab === "allfiles");
+      if (tab === "allfiles") updateAllFilesInfo();
+    }
+
+    function updateAllFilesInfo() {
+      if (!uploadedKeys.length) {
+        allFilesInfo.textContent = "No files uploaded yet. Upload files above and then ask questions across all of them.";
+      } else {
+        allFilesInfo.textContent = uploadedKeys.length + " file" + (uploadedKeys.length > 1 ? "s" : "") + " available: " + uploadedKeys.map(function(f) { return f.name; }).join(", ");
+      }
+    }
+
+    /* ── Per-file dropdown + start chat ───────────────────────────── */
+    function refreshChatDropdown() {
+      chatSelect.innerHTML = "<option value=\"\">— select a file —</option>";
+      uploadedKeys.forEach(function(item) {
+        var opt = document.createElement("option");
+        opt.value = item.key; opt.textContent = item.name;
+        chatSelect.appendChild(opt);
+      });
+    }
+
+    function startChatWith(key, name) {
+      chatSection.style.display = "block";
+      switchTab("perfile");
+      chatSelect.value = key;
+      switchFile(key);
+      chatInput.focus();
+      chatSection.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function switchFile(key) {
+      if (currentKey) perFileChatHistory[currentKey] = chatHistory;
+      currentKey  = key;
+      chatHistory = perFileChatHistory[key] || [];
+      renderHistory();
+      chatInput.disabled = !key;
+      chatSend.disabled  = !key;
+      if (key && chatHistory.length === 0) autoSummarize(key);
+    }
+
+    function autoSummarize(key) {
+      var summaryQ = "Please give a 2-3 sentence summary of what this file contains, then end with: 'Feel free to ask me anything about it!'";
+      chatInput.disabled = true; chatSend.disabled = true;
+      addBubble("thinking", "Reading your file and generating a summary…", "thinking-bubble");
+      fetch(CHAT_ENDPOINT, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ s3_key: key, question: summaryQ, chat_history: [] }),
+      }).then(function(res) {
+        if (!res.ok) throw new Error("Server error " + res.status);
+        return res.json();
+      }).then(function(data) {
+        var el = document.getElementById("thinking-bubble");
+        if (el) el.remove();
+        addBubble("assistant", data.answer);
+        chatHistory.push({ role: "assistant", content: data.answer });
+        perFileChatHistory[key] = chatHistory;
+      }).catch(function(err) {
+        var el = document.getElementById("thinking-bubble");
+        if (el) el.remove();
+        addBubble("assistant", "File loaded. Ask me anything about it!");
+        console.error("Auto-summary error:", err);
+      }).finally(function() {
+        chatInput.disabled = false; chatSend.disabled = false; chatInput.focus();
+      });
+    }
+
+    chatSelect.addEventListener("change", function() { switchFile(chatSelect.value); });
+
+    function renderHistory() {
+      chatMessages.innerHTML = "";
+      if (!chatHistory.length) {
+        chatMessages.innerHTML = "<span style=\"color:#9ca3af;font-size:0.82rem;align-self:center;\">Select a file above to get started…</span>";
+        return;
+      }
+      chatHistory.forEach(function(msg) { if (msg.role !== "system") addBubble(msg.role, msg.content); });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addBubble(role, text, id) {
+      var div = document.createElement("div");
+      div.className = "chat-bubble " + role;
+      if (id) div.id = id;
+      div.textContent = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return div;
+    }
+
+    async function sendQuestion() {
+      var q = chatInput.value.trim();
+      if (!q || !currentKey) return;
+      chatInput.value = ""; chatSend.disabled = true; chatInput.disabled = true;
+      var placeholder = chatMessages.querySelector("span");
+      if (placeholder) placeholder.remove();
+      addBubble("user", q);
+      chatHistory.push({ role: "user", content: q });
+      var thinkingEl = addBubble("thinking", "Thinking...", "thinking-bubble");
+      try {
+        var res = await fetch(CHAT_ENDPOINT, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s3_key: currentKey, question: q, chat_history: chatHistory.slice(0, -1) }),
+        });
+        if (!res.ok) throw new Error("Server error " + res.status);
+        var data = await res.json();
+        thinkingEl.remove();
+        addBubble("assistant", data.answer);
+        chatHistory.push({ role: "assistant", content: data.answer });
+        perFileChatHistory[currentKey] = chatHistory;
+      } catch (err) {
+        thinkingEl.remove();
+        addBubble("assistant", "Sorry, something went wrong. Please try again.");
+        chatHistory.pop();
+        console.error("Chat error:", err);
+      }
+      chatSend.disabled = false; chatInput.disabled = false; chatInput.focus();
+    }
+
+    chatSend.addEventListener("click", sendQuestion);
+    chatInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendQuestion(); }
+    });
+
+    /* ── Ask All Files — helpers ───────────────────────────────────── */
+    function allSetBusy(busy) {
+      allSendCombined.disabled = busy;
+      allSendPerFile.disabled  = busy;
+      allInput.disabled        = busy;
+    }
+
+    function allShowQuestion(q) {
+      allResults.innerHTML = "";
+      var qEl = document.createElement("div");
+      qEl.style.cssText = "font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:12px;padding:10px 12px;background:#eef2ff;border-radius:8px;";
+      qEl.textContent = "Q: " + q;
+      allResults.appendChild(qEl);
+    }
+
+    /* Combined Answer — one request with all files merged ──────────── */
+    async function askCombined() {
+      var q = allInput.value.trim();
+      if (!q || !uploadedKeys.length) { updateAllFilesInfo(); return; }
+
+      allSetBusy(true);
+      allShowQuestion(q);
+
+      // Build the combined answer box immediately (loading state)
+      var box = document.createElement("div");
+      box.className = "combined-answer";
+      var header = document.createElement("div");
+      header.className = "combined-header";
+      header.textContent = "Combined answer across " + uploadedKeys.length + " file" + (uploadedKeys.length > 1 ? "s" : "");
+      var body = document.createElement("div");
+      body.className = "combined-body loading";
+      body.textContent = "Reading all files and reasoning across them…";
+      box.appendChild(header);
+      box.appendChild(body);
+      allResults.appendChild(box);
+      allResults.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+      try {
+        var res = await fetch(CHAT_ENDPOINT, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            s3_keys: uploadedKeys.map(function(f) { return f.key; }),
+            question: q,
+            chat_history: [],
+          }),
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        var data = await res.json();
+        body.textContent = data.answer;
+        body.className = "combined-body";
+      } catch (err) {
+        body.textContent = "Error: could not get a combined response. Please try again.";
+        body.className = "combined-body error";
+        console.error("Combined ask error:", err);
+      }
+
+      allSetBusy(false);
+      allInput.value = "";
+      allInput.focus();
+    }
+
+    /* Ask Each File — parallel per-file cards (existing behaviour) ─── */
+    async function askPerFile() {
+      var q = allInput.value.trim();
+      if (!q || !uploadedKeys.length) { updateAllFilesInfo(); return; }
+
+      allSetBusy(true);
+      allShowQuestion(q);
+
+      var cardBodies = [];
+      uploadedKeys.forEach(function(item) {
+        var card = document.createElement("div");
+        card.className = "all-result-card";
+        var hdr = document.createElement("div");
+        hdr.className = "card-file-name";
+        hdr.textContent = item.name;
+        var body = document.createElement("div");
+        body.className = "card-body loading";
+        body.textContent = "Asking…";
+        card.appendChild(hdr);
+        card.appendChild(body);
+        allResults.appendChild(card);
+        cardBodies.push({ body: body, key: item.key });
+      });
+
+      allResults.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+      var promises = cardBodies.map(function(item) {
+        return fetch(CHAT_ENDPOINT, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s3_key: item.key, question: q, chat_history: [] }),
+        }).then(function(res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        }).then(function(data) {
+          item.body.textContent = data.answer;
+          item.body.className = "card-body";
+        }).catch(function(err) {
+          item.body.textContent = "Error: could not get a response.";
+          item.body.className = "card-body error";
+          console.error("Per-file ask error:", item.key, err);
+        });
+      });
+
+      await Promise.all(promises);
+      allSetBusy(false);
+      allInput.value = "";
+      allInput.focus();
+    }
+
+    allSendCombined.addEventListener("click", askCombined);
+    allSendPerFile.addEventListener("click", askPerFile);
+    allInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askCombined(); }
+    });
+
+    /* ── Speech-to-text (Web Speech API) ──────────────────────────── */
+    (function() {
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        // Browser doesn't support it — hide the mic buttons gracefully
+        var btns = document.querySelectorAll(".mic-btn");
+        btns.forEach(function(b) { b.style.display = "none"; });
+        return;
+      }
+
+      function makeMic(btnId, targetTextareaId) {
+        var btn      = document.getElementById(btnId);
+        var textarea = document.getElementById(targetTextareaId);
+        var recog    = new SpeechRecognition();
+        recog.lang        = "en-US";
+        recog.continuous  = true;   // keep listening until explicitly stopped
+        recog.interimResults = true;
+
+        var isListening   = false;
+        var baseText      = "";     // text already in box before this session
+        var interimSpan   = "";     // live interim text (replaced on each interim result)
+
+        recog.onstart = function() {
+          isListening = true;
+          baseText    = textarea.value;
+          btn.classList.add("listening");
+          btn.title   = "Click to stop";
+        };
+
+        recog.onresult = function(e) {
+          var interim = "";
+          var final   = "";
+          for (var i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              final += e.results[i][0].transcript;
+            } else {
+              interim += e.results[i][0].transcript;
+            }
+          }
+          if (final) baseText += (baseText && !baseText.endsWith(" ") ? " " : "") + final.trim();
+          textarea.value = baseText + (interim ? " " + interim : "");
+          textarea.scrollTop = textarea.scrollHeight;
+        };
+
+        recog.onerror = function(e) {
+          console.warn("Speech recognition error:", e.error);
+          stopListening();
+        };
+
+        recog.onend = function() {
+          if (isListening) {
+            // continuous mode ended unexpectedly — restart
+            try { recog.start(); } catch(e) { stopListening(); }
+          }
+        };
+
+        function stopListening() {
+          isListening = false;
+          btn.classList.remove("listening");
+          btn.title = "Click to speak";
+          try { recog.stop(); } catch(e) {}
+          // clean up any trailing space
+          textarea.value = textarea.value.trim();
+        }
+
+        btn.addEventListener("click", function() {
+          if (isListening) {
+            stopListening();
+          } else {
+            try { recog.start(); } catch(e) { console.warn("Could not start recognition:", e); }
+          }
+        });
+      }
+
+      makeMic("mic-perfile", "chat-input");
+      makeMic("mic-all",     "all-input");
+    })();
+  </script>
+</body>
+</html>

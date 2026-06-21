@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify Email — kBuddhi AI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </div>
+      <h1>Verify your email</h1>
+      <p id="confirm-subtitle">Check your inbox for a 6-digit code</p>
+    </div>
+    <div id="alert-error"   class="alert alert-error"   role="alert"></div>
+    <div id="alert-success" class="alert alert-success" role="alert"></div>
+    <div class="otp-group">
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 1" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 2" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 3" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 4" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 5" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 6" />
+    </div>
+    <button class="btn btn-primary" id="verify-btn" disabled>Verify Email</button>
+    <div class="footer-link" style="margin-top:14px;">Didn't get the email? <a href="#" id="resend-link">Resend code</a></div>
+    <div class="footer-link"><a href="index.html">&#8592; Back to Sign In</a></div>
+  </div>
+  <p class="hipaa-notice">&#128274; HIPAA Compliant &nbsp;·&nbsp; Email verification required</p>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    const email = sessionStorage.getItem("confirm_email");
+    if (!email) { window.location.href = "register.html"; }
+    else { document.getElementById("confirm-subtitle").textContent = "We sent a 6-digit code to " + email; }
+    initOtpInputs();
+    document.getElementById("verify-btn").addEventListener("click", async () => {
+      hideAlert("alert-error"); hideAlert("alert-success");
+      const code = getOtpValue();
+      const btn = document.getElementById("verify-btn");
+      btn.disabled = true; btn.textContent = "Verifying…";
+      try {
+        await confirmSignUp(email, code);
+        sessionStorage.removeItem("confirm_email");
+        showAlert("alert-success", "Email verified! Redirecting to sign in…");
+        setTimeout(() => { window.location.href = "index.html"; }, 1500);
+      } catch (err) {
+        showAlert("alert-error", cognitoErrorMessage(err));
+        btn.disabled = false; btn.textContent = "Verify Email";
+      }
+    });
+    document.getElementById("resend-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const link = e.target;
+      link.textContent = "Sending…"; link.style.pointerEvents = "none";
+      try { await resendConfirmationCode(email); showAlert("alert-success", "A new code has been sent."); }
+      catch (err) { showAlert("alert-error", cognitoErrorMessage(err)); }
+      link.textContent = "Resend code"; link.style.pointerEvents = "";
+    });
+  </script>
+</body>
+</html>

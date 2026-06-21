@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — kBuddhi AI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="logo">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+      </div>
+      <h1>Create account</h1>
+      <p>Register for secure portal access</p>
+    </div>
+
+    <div id="alert-error"   class="alert alert-error"   role="alert"></div>
+    <div id="alert-success" class="alert alert-success" role="alert"></div>
+
+    <form id="register-form" novalidate>
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+        <span class="field-error"></span>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Create a strong password" autocomplete="new-password" required />
+        <span class="field-error"></span>
+        <ul class="pwd-rules">
+          <li id="rule-length">8+ characters</li>
+          <li id="rule-uppercase">Uppercase letter</li>
+          <li id="rule-lowercase">Lowercase letter</li>
+          <li id="rule-number">Number</li>
+          <li id="rule-special">Special character</li>
+        </ul>
+      </div>
+      <div class="form-group">
+        <label for="confirm">Confirm password</label>
+        <input type="password" id="confirm" placeholder="Repeat your password" autocomplete="new-password" required />
+        <span class="field-error"></span>
+      </div>
+      <button type="submit" class="btn btn-primary" id="register-btn">Create Account</button>
+    </form>
+
+    <div class="footer-link">Already have an account? <a href="index.html">Sign in</a></div>
+  </div>
+  <p class="hipaa-notice">&#128274; HIPAA Compliant &nbsp;·&nbsp; Your information is protected</p>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    const emailEl   = document.getElementById("email");
+    const pwdEl     = document.getElementById("password");
+    const confirmEl = document.getElementById("confirm");
+    emailEl.addEventListener("input", () => clearError(emailEl));
+    pwdEl.addEventListener("input", () => { updatePwdChecklist(pwdEl.value); clearError(pwdEl); });
+    confirmEl.addEventListener("input", () => {
+      if (confirmEl.value && confirmEl.value !== pwdEl.value) showError(confirmEl, "Passwords do not match.");
+      else clearError(confirmEl);
+    });
+    document.getElementById("register-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert("alert-error");
+      let valid = true;
+      const email = emailEl.value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError(emailEl, "Enter a valid email."); valid = false; }
+      if (!isPasswordValid(pwdEl.value)) { showError(pwdEl, "Password does not meet all requirements."); valid = false; }
+      if (pwdEl.value !== confirmEl.value) { showError(confirmEl, "Passwords do not match."); valid = false; }
+      if (!valid) return;
+      const btn = document.getElementById("register-btn");
+      btn.disabled = true; btn.textContent = "Creating account…";
+      try {
+        await registerUser(email, pwdEl.value);
+        sessionStorage.setItem("confirm_email", email);
+        window.location.href = "confirm.html";
+      } catch (err) {
+        showAlert("alert-error", cognitoErrorMessage(err));
+        btn.disabled = false; btn.textContent = "Create Account";
+      }
+    });
+  </script>
+</body>
+</html>

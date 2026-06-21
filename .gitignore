@@ -1,0 +1,23 @@
+# AWS CDK
+infra/cdk.out/
+infra/dist/
+infra/node_modules/
+
+# Generated at deploy time - contains live API URLs and account info
+config.js
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.zip
+
+# Claude Code settings
+.claude/
+
+# Temp files
+/tmp/
+send-otp-src/
+
+# OS
+.DS_Store

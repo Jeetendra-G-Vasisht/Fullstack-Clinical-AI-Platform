@@ -1,0 +1,417 @@
+================================================================
+SECURE PORTAL — PROJECT SUMMARY
+What We Built, Why We Built It, and How It All Works
+================================================================
+
+----------------------------------------------------------------
+WHAT IS THIS PROJECT?
+----------------------------------------------------------------
+
+We built a secure login system for a HIPAA-compliant healthcare
+application. The system allows users to:
+
+  1. Register with an email and password
+  2. Log in with that email and password
+  3. Receive a 6-digit one-time code to their email as a second
+     layer of security (2FA — Two Factor Authentication)
+  4. Enter that code to complete the login
+  5. See a success page showing their name and email
+  6. Reset their password if they forget it
+  7. Sign out securely
+
+The entire frontend is hosted on GitHub Pages for free. No
+traditional database is owned or managed by us. All user
+credentials are stored securely inside Firebase (Google's
+platform), which is HIPAA-eligible.
+
+
+----------------------------------------------------------------
+WHY HIPAA?
+----------------------------------------------------------------
+
+HIPAA (Health Insurance Portability and Accountability Act) is
+a US federal law that sets rules for protecting health
+information. If a system handles any patient or health data,
+it must follow HIPAA rules.
+
+Key HIPAA requirements that affect our login system:
+  - Users must be uniquely identified (username/email)
+  - Passwords must be strong (we enforce 8+ characters,
+    uppercase, lowercase, number, special character)
+  - Two-factor authentication is required
+  - All data must be transmitted securely (HTTPS)
+  - Vendors who handle your data must sign a Business
+    Associate Agreement (BAA)
+
+Every technology we chose is either HIPAA-eligible or
+does not store sensitive data at all.
+
+
+----------------------------------------------------------------
+THE JOURNEY — WHAT WE TRIED AND WHY WE CHANGED
+----------------------------------------------------------------
+
+We went through several options before landing on the final
+solution. Here is the honest story:
+
+ATTEMPT 1: Azure AD B2C
+  - Microsoft's identity service, HIPAA-compliant
+  - We tried to create a new tenant (account) but Azure AD B2C
+    was retired for new customers as of May 1, 2025
+  - Microsoft replaced it with "Microsoft Entra External ID"
+
+ATTEMPT 2: Microsoft Entra External ID
+  - The replacement for Azure AD B2C
+  - We hit errors creating a new external tenant
+    ("Resource does not exist" errors)
+  - After spending time troubleshooting, we moved on
+
+ATTEMPT 3: Azure App Registration (Entra ID)
+  - We registered an app directly in the existing Azure tenant
+  - Used MSAL (Microsoft Authentication Library) in the browser
+  - Got it working but hit a major limitation:
+    only Microsoft-backed accounts could log in
+    (school/work emails and Outlook — not Gmail, Yahoo, etc.)
+  - The user needed any email to work
+
+ATTEMPT 4: Firebase Authentication
+  - Google's authentication service
+  - HIPAA-eligible (Google signs a BAA)
+  - Works with any email address
+  - Free tier available
+  - We switched to Firebase and got login working
+
+ATTEMPT 5: Firebase Email Link (2FA)
+  - Firebase can send a magic sign-in link to the user's email
+  - The user clicks the link to complete login
+  - This worked but hit Firebase's daily quota limit from
+    repeated testing — not practical for real use
+
+FINAL SOLUTION: Firebase + EmailJS (6-digit OTP)
+  - Firebase handles email/password verification
+  - EmailJS sends a 6-digit code to the user's email
+  - User enters the code on a verification page
+  - Clean, simple, works with any email, no quota issues
+  - EmailJS free tier: 200 emails/month
+
+
+----------------------------------------------------------------
+THE THREE TECHNOLOGIES AND WHAT EACH ONE DOES
+----------------------------------------------------------------
+
+1. GITHUB PAGES
+   What it is: A free hosting service by GitHub that serves
+   static files (HTML, CSS, JavaScript) directly from a
+   GitHub repository.
+
+   What it does in our project:
+   - Hosts all our HTML pages (login, register, verify, success)
+   - Gives us a public URL:
+     ramanuja125.github.io/login_2fa.github.io/
+   - Enforces HTTPS automatically (required for HIPAA)
+
+   What it does NOT do:
+   - Run server code
+   - Store any data
+   - Send emails
+
+   Think of it as: A digital filing cabinet that shows your
+   HTML files to anyone who visits the URL.
+
+
+2. FIREBASE AUTHENTICATION
+   What it is: Google's identity and authentication service.
+   Part of Google Cloud, which is HIPAA-eligible.
+
+   What it does in our project:
+   - Stores user accounts (email + securely hashed password)
+   - Verifies email/password when a user logs in
+   - Creates new accounts when users register
+   - Sends password reset emails via our Gmail SMTP
+   - Handles account lockout after too many failed attempts
+
+   What it does NOT do:
+   - Send the OTP code (that's EmailJS's job)
+   - Store the OTP code
+   - Know anything about our 6-digit verification step
+
+   Where data is stored:
+   - Firebase servers (Google's infrastructure)
+   - Passwords are NEVER stored in plain text — Firebase
+     uses secure hashing (you cannot reverse a hash back
+     to the original password)
+
+   Think of it as: A secure vault that holds usernames and
+   scrambled passwords. When someone tries to log in, it
+   checks if the scrambled version matches without ever
+   revealing the original password.
+
+
+3. EMAILJS
+   What it is: A service that lets you send emails directly
+   from a browser (client-side) without needing a server.
+
+   What it does in our project:
+   - Receives the 6-digit OTP code from our JavaScript code
+   - Sends it to the user's email using our Gmail account
+   - Uses our configured Gmail SMTP settings as the sender
+     (so the email comes from anantharamanuja@gmail.com,
+     not from an unknown no-reply address)
+
+   What it does NOT do:
+   - Store any passwords or user data
+   - Verify the OTP (our code does that)
+   - Know anything about Firebase
+
+   Think of it as: A delivery person. You hand them a letter
+   (the OTP code), tell them the address (user's email),
+   and they deliver it. They don't know what's in the letter
+   and they don't keep a copy.
+
+
+----------------------------------------------------------------
+THE COMPLETE LOGIN FLOW STEP BY STEP
+----------------------------------------------------------------
+
+REGISTRATION (first time):
+  Step 1: User goes to register.html
+  Step 2: Enters email and creates a password
+  Step 3: Our code checks password rules in real time:
+            - At least 8 characters
+            - At least one uppercase letter (A-Z)
+            - At least one lowercase letter (a-z)
+            - At least one number (0-9)
+            - At least one special character (!@#$% etc.)
+  Step 4: If all rules pass, our code calls Firebase
+  Step 5: Firebase creates the account and stores it
+  Step 6: Firebase sends a verification email to the user
+  Step 7: User sees success message and can now sign in
+
+
+LOGIN (every time after):
+  Step 1: User goes to index.html (login page)
+  Step 2: Enters email and password
+  Step 3: Our code sends credentials to Firebase
+  Step 4: Firebase checks the password against the stored hash
+            - If wrong: error shown, user stays on login page
+            - If correct: continue to Step 5
+  Step 5: Our code generates a random 6-digit number (OTP)
+            Example: 847291
+  Step 6: OTP is saved in the browser's sessionStorage
+            with a 10-minute expiry timestamp
+  Step 7: Our code calls EmailJS with:
+            - to_email: the user's email address
+            - otp_code: the 6-digit number
+  Step 8: EmailJS sends the email via Gmail SMTP
+  Step 9: User is redirected to verify.html
+  Step 10: User checks their email, finds the 6-digit code
+  Step 11: User types the code into the 6 boxes on verify.html
+            (boxes auto-advance as you type each digit)
+  Step 12: Our code checks:
+            - Does the entered code match what's in sessionStorage?
+            - Has it been less than 10 minutes since it was sent?
+            - If both yes: login is complete
+            - If no: error shown
+  Step 13: User is redirected to success.html
+  Step 14: success.html reads the user's name and email from
+            sessionStorage and displays them
+
+
+PASSWORD RESET:
+  Step 1: User clicks "Forgot password?" on login page
+  Step 2: Goes to forgot-password.html
+  Step 3: Enters their email address
+  Step 4: Our code calls Firebase's password reset function
+  Step 5: Firebase sends a reset link via Gmail SMTP
+  Step 6: User clicks the link in their email
+  Step 7: Firebase shows a hosted page to enter a new password
+  Step 8: User sets new password (Firebase updates it)
+  Step 9: User returns to login page and signs in normally
+
+
+SIGN OUT:
+  Step 1: User clicks "Sign Out" on success.html
+  Step 2: Browser sessionStorage is cleared
+            (auth_user and otp_data both removed)
+  Step 3: Firebase is signed out
+  Step 4: User is redirected to login page
+
+
+----------------------------------------------------------------
+HOW THE FILES ARE CONNECTED
+----------------------------------------------------------------
+
+auth.js is the brain of the whole system. Every HTML page
+loads it. It contains:
+  - Firebase configuration (project credentials)
+  - EmailJS configuration (service, template, public key)
+  - The loginUser() function
+  - The registerUser() function
+  - The generateOTP() and verifyOTP() functions
+  - The signOut() function
+  - Password validation rules and checklist logic
+  - Helper functions for showing/hiding errors
+
+styles.css is shared by all pages. It defines the visual
+appearance: card layout, buttons, input fields, colors,
+the password rule checklist, OTP input boxes, etc.
+
+index.html (Login page):
+  - Loads Firebase SDK, EmailJS SDK, auth.js, styles.css
+  - Calls loginUser() on form submit
+  - Redirects to verify.html on success
+
+register.html (Registration page):
+  - Loads Firebase SDK, auth.js, styles.css
+  - Shows live password rule checklist as you type
+  - Calls registerUser() on form submit
+
+verify.html (OTP entry page):
+  - Loads auth.js, styles.css (no Firebase or EmailJS needed)
+  - Shows 6 input boxes that auto-advance between digits
+  - Calls verifyOTP() when Verify button is clicked
+  - Redirects to success.html on valid code
+
+success.html (Welcome page):
+  - Loads Firebase SDK, auth.js, styles.css
+  - Reads user data from sessionStorage on page load
+  - If no session found, redirects back to login
+  - Calls signOut() when Sign Out is clicked
+
+forgot-password.html (Password reset page):
+  - Loads Firebase SDK, auth.js, styles.css
+  - Calls Firebase's sendPasswordResetEmail() on submit
+
+
+----------------------------------------------------------------
+WHERE IS EACH PIECE OF DATA?
+----------------------------------------------------------------
+
+User's email address and password hash:
+  → Firebase Authentication (Google's servers)
+  → Stays there permanently until account is deleted
+
+The 6-digit OTP code:
+  → Browser sessionStorage (your own browser, not a server)
+  → Disappears after 10 minutes or when tab is closed
+  → Never sent to Firebase or stored on any server
+
+Who is currently logged in:
+  → Browser sessionStorage (your own browser)
+  → Disappears when you sign out or close the tab
+
+Password reset token:
+  → Firebase (internal, not accessible to us)
+  → Expires after 1 hour
+
+
+----------------------------------------------------------------
+SMTP — WHY WE CONFIGURED IT
+----------------------------------------------------------------
+
+Firebase by default sends emails from:
+  noreply@hipaa-877ca.firebaseapp.com
+
+This address is unknown to email spam filters, so emails
+frequently end up in the spam/junk folder.
+
+We configured Gmail SMTP in Firebase so that Firebase sends
+emails FROM our own Gmail account instead. This means:
+  - Password reset emails come from a real, trusted Gmail
+  - Emails are more likely to land in the inbox
+  - The sender name can be customized to something meaningful
+
+The SMTP configuration lives in:
+  Firebase Console → Authentication → Templates → SMTP Settings
+
+EmailJS also sends through our Gmail (separately configured
+in the EmailJS dashboard) — so OTP emails also come from
+a trusted Gmail address.
+
+
+----------------------------------------------------------------
+HIPAA COMPLIANCE CHECKLIST
+----------------------------------------------------------------
+
+✓ Unique user identification
+    Every user has a unique email address as their identifier
+
+✓ Strong password enforcement
+    8+ characters, upper, lower, number, special character
+    Validated in the browser before submission
+
+✓ Two-factor authentication
+    6-digit OTP sent to registered email on every login
+
+✓ Automatic session timeout
+    OTP expires in 10 minutes
+    Session lives in sessionStorage (cleared when tab closes)
+
+✓ Encrypted transmission
+    GitHub Pages enforces HTTPS on all traffic
+    Gmail SMTP uses TLS encryption
+
+✓ HIPAA-eligible vendors
+    Firebase (Google Cloud) — HIPAA BAA available (free to sign)
+    EmailJS — used only for delivery, no PHI stored
+
+⚠ ACTION REQUIRED FOR PRODUCTION:
+    Sign Google's Cloud Data Processing Addendum (HIPAA BAA)
+    at: cloud.google.com/security/compliance/hipaa
+    This is free and officially covers Firebase Authentication
+    under your HIPAA compliance program.
+
+
+----------------------------------------------------------------
+WHAT TO DO IF SOMETHING BREAKS
+----------------------------------------------------------------
+
+"Login says incorrect password even though it's right"
+  → Check browser console (F12 → Console tab) for the real
+    Firebase error code. Common ones:
+    - auth/invalid-credential = wrong email or password
+    - auth/unauthorized-continue-uri = domain not in Firebase
+    - auth/quota-exceeded = too many attempts today
+
+"OTP email not arriving"
+  → Check spam folder first
+  → Verify EmailJS template has {{to_email}} and {{otp_code}}
+  → Check EmailJS dashboard for send logs and errors
+  → Verify Gmail SMTP is still connected in EmailJS settings
+
+"Success page redirects back to login"
+  → sessionStorage was cleared (tab was closed, or OTP expired)
+  → User needs to log in again — this is expected behavior
+
+"Forgot password email not arriving"
+  → Check Firebase Console → Authentication → SMTP Settings
+  → Make sure Gmail app password is still valid
+  → Gmail app passwords can expire if 2FA is disabled on Google
+
+
+----------------------------------------------------------------
+SUMMARY OF ALL CREDENTIALS AND WHERE THEY LIVE
+----------------------------------------------------------------
+
+Firebase:
+  - Managed at: console.firebase.google.com
+  - Project name: hipaa-877ca
+  - The firebaseConfig in auth.js contains the API keys
+
+EmailJS:
+  - Managed at: emailjs.com
+  - Service ID:  service_8ngw648  (linked to Gmail)
+  - Template ID: template_9yfipwi
+  - Public Key:  1SRRPZQ8Tp7xLh_Ub
+
+Gmail SMTP (configured in Firebase):
+  - Username: anantharamanuja@gmail.com
+  - Uses a Gmail App Password (not the regular Gmail password)
+
+GitHub Pages:
+  - Repository: ramanuja125/login_2fa.github.io (or similar)
+  - Live URL: ramanuja125.github.io/login_2fa.github.io/
+
+================================================================
+END OF DOCUMENT
+================================================================
