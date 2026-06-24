@@ -8,7 +8,7 @@ Handles:
   - s3_keys=[...]       → combined multi-file question
   - s3_key=...          → single-file question
 
-AI backend: OpenRouter → openai/gpt-4o-mini  (key stays server-side)
+AI backend: OpenRouter → openai/gpt-5.5  (key stays server-side)
 """
 
 import io
@@ -102,7 +102,7 @@ def call_openrouter(file_text: str, question: str, chat_history: list) -> str:
     messages.append({"role": "user", "content": question})
 
     payload = json.dumps({
-        "model":    "openai/gpt-4o-mini",
+        "model":    "openai/gpt-5.5",
         "messages": messages,
     }).encode("utf-8")
 
