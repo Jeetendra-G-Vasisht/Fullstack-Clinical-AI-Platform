@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two-Factor Verification — Arizona Urology Specialists</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .otp-note {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    .otp-note strong { color: #1b3a6b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="clinic-banner">
+      <div class="clinic-banner-name">Arizona Urology Specialists</div>
+      <div class="clinic-banner-sub">Secure Patient Portal</div>
+    </div>
+
+    <div class="card-header">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <h1>Two-Factor Verification</h1>
+      <p>We sent a 6-digit code to your email</p>
+    </div>
+
+    <div id="alert-error" class="alert alert-error" role="alert"></div>
+
+    <div class="otp-group">
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 1" class="otp-input" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 2" class="otp-input" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 3" class="otp-input" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 4" class="otp-input" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 5" class="otp-input" />
+      <input type="tel" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 6" class="otp-input" />
+    </div>
+
+    <p class="otp-note">Code expires in <strong>5 minutes</strong></p>
+
+    <button class="btn btn-primary" id="verify-btn" disabled>Verify &amp; Sign In</button>
+
+    <div class="footer-link" style="margin-top:16px;">
+      <a href="index.html">&#8592; Back to Sign In</a>
+    </div>
+  </div>
+
+  <p class="hipaa-notice">&#128274; HIPAA Compliant &nbsp;·&nbsp; 2FA required for secure access</p>
+  <p style="text-align:center; font-size:0.78rem; color:#6b7280; margin-top:8px;">
+    Contact Arizona Urology Specialists at <a href="tel:6022221900" style="color:#1b3a6b; text-decoration:none; font-weight:600;">602-222-1900</a>
+  </p>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    if (!sessionStorage.getItem("otp_pending_email")) { window.location.href = "index.html"; }
+    initOtpInputs();
+    document.getElementById("verify-btn").addEventListener("click", async () => {
+      hideAlert("alert-error");
+      const code = getOtpValue();
+      const btn = document.getElementById("verify-btn");
+      btn.disabled = true; btn.textContent = "Verifying…";
+      const result = await verifyOtpCode(code);
+      if (result.valid) {
+        window.location.href = "upload.html";
+      } else {
+        showAlert("alert-error", result.message);
+        if (result.expired) { setTimeout(() => { window.location.href = "index.html"; }, 2000); }
+        else { btn.disabled = false; btn.textContent = "Verify & Sign In"; }
+      }
+    });
+  </script>
+</body>
+</html>
