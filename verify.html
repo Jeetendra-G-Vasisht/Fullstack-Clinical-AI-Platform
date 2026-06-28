@@ -43,7 +43,7 @@
       btn.disabled = true; btn.textContent = "Verifying…";
       const result = await verifyOtpCode(code);
       if (result.valid) {
-        window.location.href = "upload.html";
+        window.location.href = "dashboard.html";
       } else {
         showAlert("alert-error", result.message);
         if (result.expired) { setTimeout(() => { window.location.href = "index.html"; }, 2000); }
