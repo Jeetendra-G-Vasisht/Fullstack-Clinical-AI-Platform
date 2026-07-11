@@ -26,6 +26,7 @@ CLIENT_ID      = os.environ.get("COGNITO_CLIENT_ID", "")
 DYNAMODB_TABLE = os.environ.get("DYNAMODB_TABLE", "kbuddhiai-otp-codes")
 SES_SENDER     = os.environ.get("SES_SENDER", "noreply@kbuddhiai.com")
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "https://kbuddhiai.com")
+SES_CONFIGURATION_SET = os.environ.get("SES_CONFIGURATION_SET", "")
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin":  ALLOWED_ORIGIN,
@@ -90,23 +91,27 @@ def lambda_handler(event, context):
 
         # ── Step 4: send OTP email via SES ────────────────────────────────────
         ses = boto3.client("ses", region_name=REGION)
-        try:
-            ses.send_email(
-                Source=SES_SENDER,
-                Destination={"ToAddresses": [email]},
-                Message={
-                    "Subject": {"Data": "Your kBuddhi AI verification code"},
-                    "Body": {
-                        "Html": {"Data": _otp_email_html(otp)},
-                        "Text": {
-                            "Data": (
-                                f"Your kBuddhi AI verification code is: {otp}\n\n"
-                                f"This code expires in 5 minutes. Do not share it with anyone."
-                            ),
-                        },
+        send_kwargs = {
+            "Source": SES_SENDER,
+            "Destination": {"ToAddresses": [email]},
+            "Message": {
+                "Subject": {"Data": "Your kBuddhi AI verification code"},
+                "Body": {
+                    "Html": {"Data": _otp_email_html(otp)},
+                    "Text": {
+                        "Data": (
+                            f"Your kBuddhi AI verification code is: {otp}\n\n"
+                            f"This code expires in 5 minutes. Do not share it with anyone."
+                        ),
                     },
                 },
-            )
+            },
+        }
+        # Routes bounce/complaint events to SNS for monitoring — see SesConfigSet in CDK.
+        if SES_CONFIGURATION_SET:
+            send_kwargs["ConfigurationSetName"] = SES_CONFIGURATION_SET
+        try:
+            ses.send_email(**send_kwargs)
         except ClientError as e:
             code = e.response["Error"]["Code"]
             if code == "MessageRejected":

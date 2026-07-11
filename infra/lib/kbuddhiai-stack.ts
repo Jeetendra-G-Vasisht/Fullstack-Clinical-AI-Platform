@@ -29,6 +29,8 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as ses from 'aws-cdk-lib/aws-ses';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as snsSubs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
@@ -80,6 +82,33 @@ export class KbuddhiStack extends cdk.Stack {
       identity: ses.Identity.publicHostedZone(this.hostedZone),
       dkimSigning: true,
       mailFromDomain: `mail.${DOMAIN}`,
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SES — bounce/complaint notifications (NEW)
+    // AWS explicitly looks for automated bounce/complaint handling — not just
+    // forwarding — when reviewing production-access requests. This publishes
+    // those events to SNS; send-otp opts in via ConfigurationSetName.
+    // ═══════════════════════════════════════════════════════════════════════════
+    const sesNotificationsTopic = new sns.Topic(this, 'SesNotificationsTopic', {
+      topicName: 'kbuddhiai-ses-notifications',
+      displayName: 'kBuddhi AI — SES bounce/complaint notifications',
+    });
+    sesNotificationsTopic.addSubscription(
+      new snsSubs.EmailSubscription('jeetendravasisht@gmail.com'),
+    );
+
+    const sesConfigSet = new ses.ConfigurationSet(this, 'SesConfigSet', {
+      configurationSetName: 'kbuddhiai-config-set',
+    });
+    sesConfigSet.addEventDestination('BounceComplaintToSns', {
+      destination: ses.EventDestination.snsTopic(sesNotificationsTopic),
+      events: [ses.EmailSendingEvent.BOUNCE, ses.EmailSendingEvent.COMPLAINT],
+    });
+
+    new cdk.CfnOutput(this, 'SesNotificationsTopicArn', {
+      value: sesNotificationsTopic.topicArn,
+      description: 'Confirm the email subscription sent to jeetendravasisht@gmail.com to start receiving bounce/complaint alerts',
     });
 
     new cdk.CfnOutput(this, 'SesSandboxNote', {
@@ -326,6 +355,7 @@ export class KbuddhiStack extends cdk.Stack {
         COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
         DYNAMODB_TABLE: otpTable.tableName,
         SES_SENDER: SES_FROM,
+        SES_CONFIGURATION_SET: sesConfigSet.configurationSetName,
       },
     });
 
@@ -407,6 +437,93 @@ export class KbuddhiStack extends cdk.Stack {
       },
     });
 
+    // Function URL — large-file chat queries can exceed API Gateway's hard
+    // 29s integration timeout. The Function URL runs to the Lambda's own
+    // timeout (5 min) instead. Same no-authorizer posture as the existing
+    // /chat route on API Gateway below, which this does not replace.
+    const chatFnUrl = chatFn.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      cors: {
+        allowedOrigins: [ALLOWED_ORIGIN, 'https://www.kbuddhiai.com'],
+        allowedMethods: [lambda.HttpMethod.POST],
+        allowedHeaders: ['Content-Type'],
+        maxAge: cdk.Duration.hours(1),
+      },
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // LAMBDA — structured-query  (NEW — DuckDB-backed SQL Q&A over CSV/Excel)
+    // Dedicated, minimal role: read-only on the uploads bucket, nothing else.
+    // Kept fully separate from chatFn/lambdaRole so nothing existing is touched.
+    // ═══════════════════════════════════════════════════════════════════════════
+    const structuredQueryRole = new iam.Role(this, 'StructuredQueryRole', {
+      roleName: 'kbuddhiai-structured-query-role',
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+      ],
+      inlinePolicies: {
+        ReadUploadsBucket: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              actions: ['s3:GetObject'],
+              resources: [`${uploadsBucket.bucketArn}/*`],
+            }),
+          ],
+        }),
+      },
+    });
+
+    const structuredQueryFn = new lambda.Function(this, 'StructuredQueryFn', {
+      functionName: 'kbuddhiai-structured-query',
+      runtime: lambda.Runtime.PYTHON_3_12,
+      handler: 'lambda_function.lambda_handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambdas/structured-query'), {
+        bundling: {
+          image: lambda.Runtime.PYTHON_3_12.bundlingImage,
+          local: {
+            tryBundle(outputDir: string): boolean {
+              try {
+                const { execSync } = require('child_process');
+                const srcDir = path.join(__dirname, '../lambdas/structured-query');
+                execSync(
+                  `pip install -r requirements.txt -t "${outputDir}" ` +
+                  `--platform manylinux2014_x86_64 --only-binary=:all: ` +
+                  `--python-version 3.12 --implementation cp --quiet ` +
+                  `&& cp -r "${srcDir}/." "${outputDir}"`,
+                  { cwd: srcDir, stdio: 'pipe' },
+                );
+                return true;
+              } catch {
+                return false;
+              }
+            },
+          },
+          command: [
+            'bash', '-c',
+            'pip install -r requirements.txt -t /asset-output --quiet && cp -au . /asset-output',
+          ],
+        },
+      }),
+      role: structuredQueryRole,
+      timeout: cdk.Duration.minutes(2),
+      memorySize: 1024,
+      environment: {
+        ...commonEnv,
+        OPENROUTER_API_KEY: '',
+      },
+    });
+
+    const structuredQueryFnUrl = structuredQueryFn.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      cors: {
+        allowedOrigins: [ALLOWED_ORIGIN, 'https://www.kbuddhiai.com'],
+        allowedMethods: [lambda.HttpMethod.POST],
+        allowedHeaders: ['Content-Type'],
+        maxAge: cdk.Duration.hours(1),
+      },
+    });
+
     // ═══════════════════════════════════════════════════════════════════════════
     // API GATEWAY — REST API
     // ═══════════════════════════════════════════════════════════════════════════
@@ -445,6 +562,8 @@ window.APP_CONFIG = {
   COGNITO_USER_POOL_ID: "${userPool.userPoolId}",
   COGNITO_CLIENT_ID:   "${userPoolClient.userPoolClientId}",
   API_BASE_URL:        "${api.url.replace(/\/$/, '')}",
+  CHAT_FUNCTION_URL:   "${chatFnUrl.url.replace(/\/$/, '')}",
+  STRUCTURED_QUERY_URL: "${structuredQueryFnUrl.url.replace(/\/$/, '')}",
   UPLOADS_BUCKET:      "${uploadsBucket.bucketName}",
   STATIC_BUCKET:       "${staticBucket.bucketName}",
   SES_SENDER:          "${SES_FROM}",
@@ -610,6 +729,14 @@ window.APP_CONFIG = {
     new cdk.CfnOutput(this, 'ApiGatewayUrl', {
       value: api.url,
       description: 'API Gateway base URL — baked into config.js automatically',
+    });
+    new cdk.CfnOutput(this, 'ChatFunctionUrl', {
+      value: chatFnUrl.url,
+      description: 'Chat Lambda Function URL (bypasses API Gateway 29s timeout) — baked into config.js automatically',
+    });
+    new cdk.CfnOutput(this, 'StructuredQueryFunctionUrl', {
+      value: structuredQueryFnUrl.url,
+      description: 'Structured-query (DuckDB SQL) Lambda Function URL — not yet wired into the frontend',
     });
     new cdk.CfnOutput(this, 'CognitoUserPoolId', {
       value: userPool.userPoolId,

@@ -254,6 +254,8 @@ input[type="file"] { display: none; }
 .chat-bubble.user { background: linear-gradient(135deg, #1b3a6b, #2557a7); color: #fff; margin-left: 20%; }
 .chat-bubble.ai   { background: #f3f4f6; color: #111827; margin-right: 20%; }
 .chat-bubble.loading { background: #f3f4f6; color: #9ca3af; font-style: italic; }
+.chat-bubble.thinking { background: #f3f4f6; color: #9ca3af; font-style: italic; animation: thinkingPulse 1.4s ease-in-out infinite; }
+@keyframes thinkingPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 
 .textarea-with-mic { position: relative; }
 .chat-textarea {
@@ -283,6 +285,8 @@ input[type="file"] { display: none; }
 .all-result-card { background: #f9fafb; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
 .all-result-card .file-label { font-size: 0.72rem; font-weight: 600; color: #1b3a6b; margin-bottom: 6px; }
 .all-result-card .answer { font-size: 0.85rem; color: #111827; line-height: 1.55; }
+.combined-answer .combined-body.loading,
+.all-result-card .card-body.loading { color: #9ca3af; font-style: italic; animation: thinkingPulse 1.4s ease-in-out infinite; }
 
 .stored-actions-row { display: flex; gap: 10px; margin-top: 10px; }
 

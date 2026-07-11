@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kBuddhi AI — Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Top Navigation Bar ─────────────────────────────────────── */
+    body { margin: 0 !important; padding: 0 !important; display: block !important; align-items: initial !important; justify-content: initial !important; background: #f0f4f8; min-height: 100vh; }
+
+    .top-nav {
+      width: 100%;
+      background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(30,64,175,0.18);
+    }
+
+    .nav-brand {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.3px;
+      margin-right: 32px;
+      white-space: nowrap;
+    }
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .nav-tab {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      background: transparent;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .nav-tab.active {
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+    }
+
+    .nav-tab.inactive {
+      color: rgba(255,255,255,0.35);
+      cursor: default;
+      position: relative;
+    }
+
+    .nav-tab.inactive:hover::after {
+      content: "Coming Soon";
+      position: absolute;
+      top: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 200;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .nav-username {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.75);
+      font-weight: 500;
+    }
+
+    .nav-signout {
+      font-size: 0.78rem;
+      color: #fff;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      padding: 5px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background .15s;
+    }
+    .nav-signout:hover { background: rgba(255,255,255,0.25); }
+
+    /* ── Dashboard panels ───────────────────────────────────────── */
+    .dash-panel { display: none; }
+    .dash-panel.active { display: block; }
+
+    /* Prompt panel inherits upload.html layout */
+    #dash-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+    }
+
+    #dash-prompt .card { margin: 0 auto; }
+
+    /* Coming Soon panel */
+    .coming-soon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 56px);
+      padding: 40px 16px;
+    }
+
+    .coming-soon-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 48px 40px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    .coming-soon-icon {
+      width: 64px; height: 64px;
+      background: #f3f4f6;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .coming-soon-card h2 {
+      font-size: 1.4rem; font-weight: 700; color: #111827;
+      margin-bottom: 10px;
+    }
+
+    .coming-soon-card p {
+      font-size: 0.9rem; color: #6b7280; line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .test-data-badge {
+      display: inline-block;
+      background: #fef3c7; color: #92400e;
+      border: 1px solid #fcd34d;
+      border-radius: 99px; padding: 4px 14px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+
+    /* Wider layout for dashboard */
+    #dash-prompt .upload-card {
+      max-width: 1100px !important;
+      width: 95vw;
+    }
+    #dash-prompt .chat-messages {
+      max-height: 500px;
+    }
+
+    /* Compact mode cards */
+    #dash-prompt .mode-card {
+      padding: 5px 12px !important;
+    }
+    #dash-prompt .mode-card svg {
+      width: 16px !important;
+      height: 16px !important;
+      margin-bottom: 3px !important;
+    }
+    #dash-prompt .ua-primary { color: #2563eb !important; font-weight: 700 !important; }
+    #dash-prompt .mode-title { font-size: 0.80rem !important; margin-bottom: 1px !important; }
+    #dash-prompt .mode-desc  { font-size: 0.65rem !important; }
+
+    /* Compact upload drop zone */
+    #dash-prompt .upload-area {
+      padding: 8px 20px !important;
+      margin-bottom: 8px !important;
+    }
+    #dash-prompt .upload-area svg {
+      display: block !important;
+      width: 16px !important;
+      height: 16px !important;
+      margin: 0 auto 4px !important;
+      stroke-width: 2.2 !important;
+    }
+    #dash-prompt .upload-status {
+      min-height: 0 !important;
+      margin-bottom: 4px !important;
+    }
+    #dash-prompt .progress-bar-wrap {
+      margin: 4px 0 !important;
+    }
+
+    /* Inline guard for upload panel */
+    .mode-select { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; margin-bottom: 20px !important; }
+    .mode-card svg, .upload-area svg { display: block !important; margin: 0 auto 10px !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Top Navigation ──────────────────────────────────────────── -->
+  <nav class="top-nav">
+    <span class="nav-brand">kBuddhi AI</span>
+    <div class="nav-tabs">
+      <button class="nav-tab active"   id="nav-prompt"       onclick="showDashTab('prompt')">Prompt</button>
+      <button class="nav-tab inactive" id="nav-performance"  onclick="showDashTab('performance')">Performance</button>
+      <button class="nav-tab inactive" id="nav-quality"      onclick="showDashTab('quality')">Quality</button>
+      <button class="nav-tab inactive" id="nav-productivity" onclick="showDashTab('productivity')">Productivity</button>
+      <button class="nav-tab inactive" id="nav-financials"   onclick="showDashTab('financials')">Financials</button>
+    </div>
+    <div class="nav-user">
+      <span class="nav-username" id="user-name">User</span>
+      <button class="nav-signout" onclick="signOut()">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- ── Tab: Prompt (existing portal) ──────────────────────────── -->
+  <div class="dash-panel active" id="dash-prompt">
+    <div style="padding:24px 16px 40px; display:flex; flex-direction:column; align-items:center;">
+
+      <div class="card upload-card">
+        <div id="alert-error"   class="alert alert-error"   role="alert"></div>
+        <div id="alert-success" class="alert alert-success" role="alert"></div>
+
+        <!-- Mode selection -->
+        <div class="mode-select">
+          <div class="mode-card active" id="mode-upload" onclick="selectMode('upload')">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p class="mode-title">Upload Files</p>
+            <p class="mode-desc">Upload new files from your computer</p>
+          </div>
+          <div class="mode-card" id="mode-stored" onclick="selectMode('stored')">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            <p class="mode-title">Load Stored Files</p>
+            <p class="mode-desc">Browse and load files already in storage</p>
+          </div>
+        </div>
+
+        <!-- Upload panel -->
+        <div id="upload-panel">
+          <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p class="ua-primary">Click to choose files, or drag &amp; drop here</p>
+            <p class="ua-secondary">Supports Excel, PDF, Word, CSV, TXT — multiple files at once</p>
+            <div class="file-count" id="file-count"></div>
+          </div>
+          <input type="file" id="file-input" multiple />
+          <ul class="file-list" id="file-list"></ul>
+          <div class="progress-bar-wrap" id="progress-wrap">
+            <div class="progress-bar-fill" id="progress-bar"></div>
+          </div>
+          <div class="upload-status" id="upload-status"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="upload-btn" disabled>Upload Files</button>
+          </div>
+        </div>
+
+        <!-- Load stored files panel -->
+        <div class="stored-panel" id="stored-panel">
+          <div id="stored-loading" class="stored-loading" style="display:none;">Loading files from storage…</div>
+          <div id="stored-empty"   class="stored-empty"   style="display:none;">No files found in storage.</div>
+          <div id="stored-actions-row" class="stored-actions" style="display:none;">
+            <a onclick="storedSelectAll(true)">Select all</a>
+            <a onclick="storedSelectAll(false)">Deselect all</a>
+          </div>
+          <ul class="stored-list" id="stored-list" style="display:none;"></ul>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-primary" id="stored-load-btn" disabled onclick="loadSelectedStored()">Load Selected Files</button>
+          </div>
+        </div>
+
+        <div class="chat-section" id="chat-section">
+          <h2>Ask questions about your files</h2>
+          <div class="chat-tabs">
+            <button class="chat-tab-btn active" id="tab-btn-perfile"  onclick="switchTab('perfile')">Per File Chat</button>
+            <button class="chat-tab-btn"        id="tab-btn-allfiles" onclick="switchTab('allfiles')">Ask All Files</button>
+            <button class="chat-tab-btn"        id="tab-btn-sms"      onclick="switchTab('sms')">&#128241; SMS Outreach</button>
+          </div>
+
+          <!-- Tab 1: Per File -->
+          <div class="chat-tab-panel active" id="tab-perfile">
+            <p class="chat-file-label">Select a file to chat with:</p>
+            <select class="chat-file-select" id="chat-file-select">
+              <option value="">— select a file —</option>
+            </select>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="textarea-with-mic">
+              <textarea class="chat-textarea" id="chat-input" placeholder="Type your question here… (Enter to send, Shift+Enter for new line)" disabled rows="3"></textarea>
+              <button class="mic-btn" id="mic-perfile" title="Click to speak" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93V21h2v-2.07A8.001 8.001 0 0 0 20 11h-2a6 6 0 0 1-12 0H4a8.001 8.001 0 0 0 7 7.93z"/></svg>
+              </button>
+            </div>
+            <button class="btn btn-primary chat-send-btn" id="chat-send" disabled>Send</button>
+            <p class="chat-hint">Powered by GPT-5.5. Your API key stays server-side.</p>
+          </div>
+
+          <!-- Tab 2: Ask All Files -->
+          <div class="chat-tab-panel" id="tab-allfiles">
+            <div class="all-files-info" id="all-files-info">Upload files above to ask questions across all of them at once.</div>
+            <div class="textarea-with-mic">
+              <textarea class="chat-textarea" id="all-input" placeholder="Ask a question that spans all your uploaded files — trends, comparisons, lookups across records…" rows="4"></textarea>
+              <button class="mic-btn" id="mic-all" title="Click to speak" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93V21h2v-2.07A8.001 8.001 0 0 0 20 11h-2a6 6 0 0 1-12 0H4a8.001 8.001 0 0 0 7 7.93z"/></svg>
+              </button>
+            </div>
+            <div class="all-btn-row">
+              <button class="btn btn-primary" id="all-send-combined">Combined Answer</button>
+              <button class="btn btn-outline"  id="all-send-perfile">Ask Each File</button>
+            </div>
+            <div id="all-results"></div>
+            <p class="chat-hint">
+              <strong>Combined Answer</strong> — all files merged, AI reasons across all at once.<br>
+              <strong>Ask Each File</strong> — each file queried independently in parallel.
+            </p>
+          </div>
+
+          <!-- Tab 3: SMS Outreach -->
+          <div class="chat-tab-panel" id="tab-sms" style="display:none;">
+            <label style="font-size:0.85rem;color:#6b7280;display:block;margin-bottom:8px;">Select an Excel patient file to send reminders:</label>
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+              <select id="sms-file-select" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:0.9rem;box-sizing:border-box;">
+                <option value="">— select an uploaded file —</option>
+              </select>
+              <select id="sms-type-select" style="flex:1;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:0.9rem;box-sizing:border-box;">
+                <option value="balance">&#128181; Balance Reminder</option>
+                <option value="wellness">&#129657; Wellness Visit</option>
+              </select>
+              <button class="btn btn-primary" id="sms-send-btn" onclick="sendSmsReminders()" style="white-space:nowrap;padding:10px 20px;">Send Reminders</button>
+            </div>
+            <div id="sms-status" style="display:none;padding:12px 16px;border-radius:8px;font-size:0.88rem;margin-bottom:12px;line-height:1.5;"></div>
+            <p id="sms-preview" style="font-size:0.8rem;color:#6b7280;font-style:italic;margin-bottom:16px;display:none;"></p>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <h3 style="font-size:1rem;font-weight:600;color:#111827;margin:0;">Patient Replies</h3>
+              <button class="btn btn-outline" id="sms-refresh-btn" onclick="loadSmsConversations()" style="padding:6px 16px;font-size:0.82rem;">&#8635; Refresh</button>
+            </div>
+            <div id="sms-conversations-wrap">
+              <p style="text-align:center;color:#9ca3af;font-size:0.88rem;padding:24px 0;">No messages sent yet. Send reminders above to get started.</p>
+            </div>
+            <p style="font-size:0.75rem;color:#9ca3af;margin-top:10px;">GPT-5.5 replies automatically to inbound patient messages.</p>
+          </div>
+        </div>
+      </div>
+
+      <p class="hipaa-notice" style="margin-top:24px;">
+        <span class="badge">&#128274; HIPAA Compliant</span><br/>
+        Files are uploaded securely over HTTPS. Always sign out when done.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Tab: Performance ────────────────────────────────────────── -->
+  <div class="dash-panel" id="dash-performance">
+    <div class="coming-soon-wrap">
+      <div class="coming-soon-card">
+        <div class="coming-soon-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+        </div>
+        <h2>Performance</h2>
+        <p>Track clinic performance metrics — new patient volume, visit trends, provider utilization, and appointment completion rates.</p>
+        <span class="test-data-badge">Coming Soon — Awaiting Test Data</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Quality ────────────────────────────────────────────── -->
+  <div class="dash-panel" id="dash-quality">
+    <div class="coming-soon-wrap">
+      <div class="coming-soon-card">
+        <div class="coming-soon-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <h2>Quality</h2>
+        <p>Monitor clinical quality measures — HbA1C control rates, Medicare patient outcomes, preventive care completion, and HEDIS metrics.</p>
+        <span class="test-data-badge">Coming Soon — Awaiting Test Data</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Productivity ───────────────────────────────────────── -->
+  <div class="dash-panel" id="dash-productivity">
+    <div class="coming-soon-wrap">
+      <div class="coming-soon-card">
+        <div class="coming-soon-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <h2>Productivity</h2>
+        <p>Measure staff and provider productivity — patients seen per day, visit duration, scheduling efficiency, and no-show rates.</p>
+        <span class="test-data-badge">Coming Soon — Awaiting Test Data</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Financials ─────────────────────────────────────────── -->
+  <div class="dash-panel" id="dash-financials">
+    <div class="coming-soon-wrap">
+      <div class="coming-soon-card">
+        <div class="coming-soon-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <h2>Financials</h2>
+        <p>View revenue, collections, outstanding balances, insurance breakdowns, and month-over-month financial trends for the clinic.</p>
+        <span class="test-data-badge">Coming Soon — Awaiting Test Data</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // ── Auth guard ──────────────────────────────────────────────
+    var user = getSessionUser();
+    if (!user) { window.location.href = "index.html"; }
+    else { document.getElementById("user-name").textContent = user.name || user.email || "User"; }
+
+    // ── API endpoints ───────────────────────────────────────────
+    var API_ENDPOINT  = (window.APP_CONFIG ? window.APP_CONFIG.API_BASE_URL : "") + "/get-upload-url";
+    var CHAT_ENDPOINT = (window.APP_CONFIG && window.APP_CONFIG.CHAT_FUNCTION_URL) || ((window.APP_CONFIG ? window.APP_CONFIG.API_BASE_URL : "") + "/chat");
+    var STRUCTURED_QUERY_ENDPOINT = window.APP_CONFIG && window.APP_CONFIG.STRUCTURED_QUERY_URL;
+    var SMS_SEND_ENDPOINT = "https://aoqop7lkph.execute-api.us-east-2.amazonaws.com/sms-send";
+    var SMS_CONV_ENDPOINT = "https://aoqop7lkph.execute-api.us-east-2.amazonaws.com/sms-conversations";
+
+    // ── Dashboard tab switching ─────────────────────────────────
+    var DASH_TABS = ["prompt","performance","quality","productivity","financials"];
+
+    function showDashTab(tab) {
+      // inactive tabs just show Coming Soon — still allow click
+      DASH_TABS.forEach(function(t) {
+        var panel = document.getElementById("dash-" + t);
+        var btn   = document.getElementById("nav-" + t);
+        if (panel) panel.classList.toggle("active", t === tab);
+        if (btn) {
+          btn.classList.remove("active");
+          if (t === tab) btn.classList.add("active");
+        }
+      });
+    }
+
+    // ── Mode switching ──────────────────────────────────────────
+    function selectMode(mode) {
+      var isUpload = mode === "upload";
+      document.getElementById("mode-upload").classList.toggle("active", isUpload);
+      document.getElementById("mode-stored").classList.toggle("active", !isUpload);
+      document.getElementById("upload-panel").style.display  = isUpload ? "block" : "none";
+      document.getElementById("stored-panel").style.display  = isUpload ? "none"  : "block";
+      if (!isUpload) fetchStoredFiles();
+    }
+
+    // ── Load stored files ───────────────────────────────────────
+    var storedFilesCache = null;
+
+    function fetchStoredFiles() {
+      if (storedFilesCache) return;
+      var loadingEl   = document.getElementById("stored-loading");
+      var emptyEl     = document.getElementById("stored-empty");
+      var listEl      = document.getElementById("stored-list");
+      var actionsRow  = document.getElementById("stored-actions-row");
+
+      loadingEl.style.display  = "block";
+      emptyEl.style.display    = "none";
+      listEl.style.display     = "none";
+      actionsRow.style.display = "none";
+
+      fetch(CHAT_ENDPOINT, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list_files", user_sub: user.user_sub }),
+      }).then(function(res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      }).then(function(data) {
+        loadingEl.style.display = "none";
+        var files = data.files || [];
+        storedFilesCache = files;
+        if (!files.length) { emptyEl.style.display = "block"; return; }
+        listEl.innerHTML = "";
+        files.forEach(function(f) {
+          var li = document.createElement("li");
+          li.innerHTML = "<input type='checkbox' class='stored-cb' data-key='" + f.key + "' data-name='" + f.name + "'>" +
+            "<span class='sl-name' title='" + f.name + "'>" + f.name + "</span>" +
+            "<span class='sl-meta'>" + formatSize(f.size) + " &nbsp;·&nbsp; " + f.last_modified + "</span>";
+          li.querySelector(".stored-cb").addEventListener("change", updateStoredLoadBtn);
+          li.addEventListener("click", function(e) {
+            if (e.target.tagName !== "INPUT") { var cb = li.querySelector(".stored-cb"); cb.checked = !cb.checked; updateStoredLoadBtn(); }
+          });
+          listEl.appendChild(li);
+        });
+        listEl.style.display     = "block";
+        actionsRow.style.display = "flex";
+      }).catch(function(err) {
+        loadingEl.style.display = "none";
+        emptyEl.textContent = "Could not load files. Please try again.";
+        emptyEl.style.display = "block";
+        console.error("List files error:", err);
+      });
+    }
+
+    function updateStoredLoadBtn() {
+      document.getElementById("stored-load-btn").disabled = document.querySelectorAll(".stored-cb:checked").length === 0;
+    }
+
+    function storedSelectAll(select) {
+      document.querySelectorAll(".stored-cb").forEach(function(cb) { cb.checked = select; });
+      updateStoredLoadBtn();
+    }
+
+    function loadSelectedStored() {
+      var checked = document.querySelectorAll(".stored-cb:checked");
+      if (!checked.length) return;
+      var newKeys = [];
+      checked.forEach(function(cb) {
+        var key = cb.getAttribute("data-key"), name = cb.getAttribute("data-name");
+        if (!uploadedKeys.find(function(f) { return f.key === key; })) newKeys.push({ key: key, name: name });
+      });
+      if (!newKeys.length) {
+        document.getElementById("chat-section").style.display = "block";
+        document.getElementById("chat-section").scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+      uploadedKeys = uploadedKeys.concat(newKeys);
+      refreshChatDropdown();
+      updateAllFilesInfo();
+      document.getElementById("chat-section").style.display = "block";
+      switchTab("perfile");
+      startChatWith(newKeys[0].key, newKeys[0].name);
+    }
+
+    // ── File input / drag-drop ──────────────────────────────────
+    var fileInput    = document.getElementById("file-input");
+    var dropZone     = document.getElementById("drop-zone");
+    var fileCountEl  = document.getElementById("file-count");
+    var fileListEl   = document.getElementById("file-list");
+    var uploadBtn    = document.getElementById("upload-btn");
+    var progressWrap = document.getElementById("progress-wrap");
+    var progressBar  = document.getElementById("progress-bar");
+    var uploadStatus = document.getElementById("upload-status");
+    var selectedFiles = [];
+    var uploadedKeys  = [];
+
+    function formatSize(bytes) {
+      if (bytes < 1024)    return bytes + " B";
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / 1048576).toFixed(1) + " MB";
+    }
+
+    function setFiles(fileList) {
+      selectedFiles = Array.from(fileList);
+      hideAlert("alert-error"); hideAlert("alert-success");
+      uploadStatus.textContent = "";
+      fileCountEl.textContent  = selectedFiles.length === 1 ? "1 file selected" : selectedFiles.length + " files selected";
+      fileListEl.innerHTML = "";
+      selectedFiles.forEach(function(f, i) {
+        var li = document.createElement("li");
+        li.id = "file-row-" + i;
+        li.innerHTML = "<span class='fname' title='" + f.name + "'>" + f.name + "</span><span class='fsize'>" + formatSize(f.size) + "</span><span class='fstatus pending' id='fstatus-" + i + "'>Pending</span>";
+        fileListEl.appendChild(li);
+      });
+      fileListEl.style.display = selectedFiles.length ? "block" : "none";
+      uploadBtn.disabled = selectedFiles.length === 0;
+    }
+
+    fileInput.addEventListener("change", function() { if (fileInput.files.length) setFiles(fileInput.files); });
+    dropZone.addEventListener("dragover",  function(e) { e.preventDefault(); dropZone.classList.add("drag-over"); });
+    dropZone.addEventListener("dragleave", function()  { dropZone.classList.remove("drag-over"); });
+    dropZone.addEventListener("drop", function(e) {
+      e.preventDefault(); dropZone.classList.remove("drag-over");
+      if (e.dataTransfer.files.length) setFiles(e.dataTransfer.files);
+    });
+
+    async function uploadOne(file, index) {
+      var statusEl = document.getElementById("fstatus-" + index);
+      statusEl.textContent = "Uploading..."; statusEl.className = "fstatus uploading";
+      var res = await fetch(API_ENDPOINT, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, user_sub: user.user_sub }),
+      });
+      if (!res.ok) throw new Error("Could not get upload URL for " + file.name);
+      var data = await res.json();
+      var formData = new FormData();
+      Object.entries(data.fields).forEach(function(e) { formData.append(e[0], e[1]); });
+      formData.append("file", file);
+      var uploadRes = await fetch(data.upload_url, { method: "POST", body: formData });
+      if (!uploadRes.ok) throw new Error("S3 rejected " + file.name);
+      statusEl.textContent = "Chat"; statusEl.className = "fstatus done";
+      statusEl.title = "Click to chat about this file";
+      statusEl.onclick = function() { startChatWith(data.key, file.name); };
+      return data.key;
+    }
+
+    uploadBtn.addEventListener("click", async function() {
+      if (!selectedFiles.length) return;
+      uploadBtn.disabled = true;
+      hideAlert("alert-error"); hideAlert("alert-success");
+      progressWrap.style.display = "block"; progressBar.style.width = "0%";
+      var done = 0, errors = [], newKeys = [];
+      for (var i = 0; i < selectedFiles.length; i++) {
+        uploadStatus.textContent = "Uploading " + (i + 1) + " of " + selectedFiles.length + "...";
+        try {
+          var key = await uploadOne(selectedFiles[i], i);
+          newKeys.push({ key: key, name: selectedFiles[i].name }); done++;
+        } catch (err) {
+          errors.push(selectedFiles[i].name);
+          var el = document.getElementById("fstatus-" + i);
+          el.textContent = "Failed"; el.className = "fstatus error";
+          console.error("Upload error:", err);
+        }
+        progressBar.style.width = Math.round(((i + 1) / selectedFiles.length) * 100) + "%";
+      }
+      uploadStatus.textContent = "";
+      if (errors.length === 0) {
+        showAlert("alert-success", done === 1 ? "1 file uploaded. Click Chat next to it." : done + " files uploaded. Click Chat next to any file.");
+        fileInput.value = ""; fileCountEl.textContent = ""; uploadBtn.disabled = true;
+        setTimeout(function() { progressWrap.style.display = "none"; progressBar.style.width = "0%"; }, 1500);
+      } else {
+        showAlert("alert-error", errors.length + " file(s) failed: " + errors.join(", "));
+        uploadBtn.disabled = false;
+      }
+      if (newKeys.length) {
+        uploadedKeys = uploadedKeys.concat(newKeys);
+        refreshChatDropdown();
+        document.getElementById("chat-section").style.display = "block";
+        if (newKeys.length === 1) startChatWith(newKeys[0].key, newKeys[0].name);
+      }
+    });
+
+    // ── Chat ────────────────────────────────────────────────────
+    var chatSection  = document.getElementById("chat-section");
+    var chatSelect   = document.getElementById("chat-file-select");
+    var chatMessages = document.getElementById("chat-messages");
+    var chatInput    = document.getElementById("chat-input");
+    var chatSend     = document.getElementById("chat-send");
+    var allInput         = document.getElementById("all-input");
+    var allSendCombined  = document.getElementById("all-send-combined");
+    var allSendPerFile   = document.getElementById("all-send-perfile");
+    var allResults       = document.getElementById("all-results");
+    var allFilesInfo     = document.getElementById("all-files-info");
+    var currentKey = null, chatHistory = [], perFileChatHistory = {};
+
+    function switchTab(tab) {
+      ["perfile","allfiles","sms"].forEach(function(t) {
+        var panel = document.getElementById("tab-" + t);
+        var btn   = document.getElementById("tab-btn-" + t);
+        if (panel) { panel.style.display = (t === tab) ? "block" : "none"; panel.classList.toggle("active", t === tab); }
+        if (btn)   btn.classList.toggle("active", t === tab);
+      });
+      if (tab === "allfiles") updateAllFilesInfo();
+      if (tab === "sms")      populateSmsFileSelect();
+    }
+
+    function updateAllFilesInfo() {
+      allFilesInfo.textContent = uploadedKeys.length
+        ? uploadedKeys.length + " file" + (uploadedKeys.length > 1 ? "s" : "") + " available: " + uploadedKeys.map(function(f) { return f.name; }).join(", ")
+        : "No files uploaded yet. Upload files above and then ask questions across all of them.";
+    }
+
+    function refreshChatDropdown() {
+      chatSelect.innerHTML = "<option value=''>— select a file —</option>";
+      uploadedKeys.forEach(function(item) {
+        var opt = document.createElement("option");
+        opt.value = item.key; opt.textContent = item.name;
+        chatSelect.appendChild(opt);
+      });
+    }
+
+    function startChatWith(key, name) {
+      chatSection.style.display = "block";
+      switchTab("perfile");
+      chatSelect.value = key;
+      switchFile(key);
+      chatInput.focus();
+      chatSection.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function switchFile(key) {
+      if (currentKey) perFileChatHistory[currentKey] = chatHistory;
+      currentKey  = key;
+      chatHistory = perFileChatHistory[key] || [];
+      renderHistory();
+      chatInput.disabled = !key; chatSend.disabled = !key;
+      if (key && chatHistory.length === 0) autoSummarize(key);
+    }
+
+    function autoSummarize(key) {
+      var q = "Please give a 2-3 sentence summary of what this file contains, then end with: 'Feel free to ask me anything about it!'";
+      chatInput.disabled = true; chatSend.disabled = true;
+      startThinkingTimer(addBubble("thinking", "Reading your file and generating a summary…", "thinking-bubble"), "Reading your file and generating a summary…");
+      fetch(CHAT_ENDPOINT, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ s3_key: key, question: q, chat_history: [] }),
+      }).then(function(res) { if (!res.ok) throw new Error(); return res.json(); })
+        .then(function(data) {
+          var el = document.getElementById("thinking-bubble"); if (el) el.remove();
+          addBubble("assistant", data.answer);
+          chatHistory.push({ role: "assistant", content: data.answer });
+          perFileChatHistory[key] = chatHistory;
+        }).catch(function() {
+          var el = document.getElementById("thinking-bubble"); if (el) el.remove();
+          addBubble("assistant", "File loaded. Ask me anything about it!");
+        }).finally(function() { chatInput.disabled = false; chatSend.disabled = false; chatInput.focus(); });
+    }
+
+    chatSelect.addEventListener("change", function() { switchFile(chatSelect.value); });
+
+    function renderHistory() {
+      chatMessages.innerHTML = "";
+      if (!chatHistory.length) {
+        chatMessages.innerHTML = "<span style='color:#9ca3af;font-size:0.82rem;'>Select a file above to get started…</span>";
+        return;
+      }
+      chatHistory.forEach(function(msg) { if (msg.role !== "system") addBubble(msg.role, msg.content); });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addBubble(role, text, id) {
+      var div = document.createElement("div");
+      div.className = "chat-bubble " + role;
+      if (id) div.id = id;
+      div.textContent = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return div;
+    }
+
+    // Reassures the user during long (multi-minute) LLM responses so the
+    // wait doesn't look frozen — appends elapsed seconds once past ~6s.
+    // Self-stops once the element is removed from the DOM.
+    function startThinkingTimer(el, baseText) {
+      var start = Date.now();
+      var timer = setInterval(function() {
+        if (!el || !document.body.contains(el)) { clearInterval(timer); return; }
+        var secs = Math.floor((Date.now() - start) / 1000);
+        el.textContent = baseText + (secs >= 6 ? " (" + secs + "s)" : "");
+      }, 1000);
+      return timer;
+    }
+
+    // CSV/Excel questions get tried against the fast SQL-backed endpoint
+    // first; any failure (including it being unavailable) silently falls
+    // back to the existing full-file chat endpoint below, so behavior is
+    // never worse than before this was added — only faster when it works.
+    function isTabularKey(key) {
+      var ext = (key.split(".").pop() || "").toLowerCase();
+      return ext === "csv" || ext === "txt" || ext === "xlsx" || ext === "xls";
+    }
+
+    async function tryStructuredQuery(key, question) {
+      if (!STRUCTURED_QUERY_ENDPOINT || !isTabularKey(key)) return null;
+      try {
+        var res = await fetch(STRUCTURED_QUERY_ENDPOINT, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s3_key: key, question: question }),
+        });
+        if (!res.ok) return null;
+        var data = await res.json();
+        return (data && data.answer && !data.error) ? data.answer : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function sendQuestion() {
+      var q = chatInput.value.trim();
+      if (!q || !currentKey) return;
+      chatInput.value = ""; chatSend.disabled = true; chatInput.disabled = true;
+      var placeholder = chatMessages.querySelector("span"); if (placeholder) placeholder.remove();
+      addBubble("user", q);
+      chatHistory.push({ role: "user", content: q });
+      var thinkingEl = addBubble("thinking", "Thinking...", "thinking-bubble");
+      startThinkingTimer(thinkingEl, "Thinking...");
+      try {
+        var answer = await tryStructuredQuery(currentKey, q);
+        if (answer === null) {
+          var res = await fetch(CHAT_ENDPOINT, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ s3_key: currentKey, question: q, chat_history: chatHistory.slice(0, -1) }),
+          });
+          if (!res.ok) throw new Error();
+          var data = await res.json();
+          answer = data.answer;
+        }
+        thinkingEl.remove();
+        addBubble("assistant", answer);
+        chatHistory.push({ role: "assistant", content: answer });
+        perFileChatHistory[currentKey] = chatHistory;
+      } catch (err) {
+        thinkingEl.remove();
+        addBubble("assistant", "Sorry, something went wrong. Please try again.");
+        chatHistory.pop();
+      }
+      chatSend.disabled = false; chatInput.disabled = false; chatInput.focus();
+    }
+
+    chatSend.addEventListener("click", sendQuestion);
+    chatInput.addEventListener("keydown", function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendQuestion(); } });
+
+    // ── Ask All Files ───────────────────────────────────────────
+    function allSetBusy(busy) { allSendCombined.disabled = busy; allSendPerFile.disabled = busy; allInput.disabled = busy; }
+
+    function allShowQuestion(q) {
+      allResults.innerHTML = "";
+      var qEl = document.createElement("div");
+      qEl.style.cssText = "font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:12px;padding:10px 12px;background:#eef2ff;border-radius:8px;";
+      qEl.textContent = "Q: " + q;
+      allResults.appendChild(qEl);
+    }
+
+    async function askCombined() {
+      var q = allInput.value.trim();
+      if (!q || !uploadedKeys.length) { updateAllFilesInfo(); return; }
+      allSetBusy(true); allShowQuestion(q);
+      var box = document.createElement("div"); box.className = "combined-answer";
+      var header = document.createElement("div"); header.className = "combined-header";
+      header.textContent = "Combined answer across " + uploadedKeys.length + " file" + (uploadedKeys.length > 1 ? "s" : "");
+      var body = document.createElement("div"); body.className = "combined-body loading"; body.textContent = "Reading all files and reasoning across them…";
+      box.appendChild(header); box.appendChild(body); allResults.appendChild(box);
+      var combinedTimer = startThinkingTimer(body, "Reading all files and reasoning across them…");
+      try {
+        var res = await fetch(CHAT_ENDPOINT, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s3_keys: uploadedKeys.map(function(f) { return f.key; }), question: q, chat_history: [] }),
+        });
+        if (!res.ok) throw new Error();
+        var data = await res.json();
+        clearInterval(combinedTimer);
+        body.textContent = data.answer; body.className = "combined-body";
+      } catch (err) { clearInterval(combinedTimer); body.textContent = "Error getting response. Please try again."; body.className = "combined-body error"; }
+      allSetBusy(false); allInput.value = ""; allInput.focus();
+    }
+
+    async function askPerFile() {
+      var q = allInput.value.trim();
+      if (!q || !uploadedKeys.length) { updateAllFilesInfo(); return; }
+      allSetBusy(true); allShowQuestion(q);
+      var cardBodies = [];
+      uploadedKeys.forEach(function(item) {
+        var card = document.createElement("div"); card.className = "all-result-card";
+        var hdr = document.createElement("div"); hdr.className = "card-file-name"; hdr.textContent = item.name;
+        var body = document.createElement("div"); body.className = "card-body loading"; body.textContent = "Asking…";
+        card.appendChild(hdr); card.appendChild(body); allResults.appendChild(card);
+        var perFileTimer = startThinkingTimer(body, "Asking…");
+        cardBodies.push({ body: body, key: item.key, timer: perFileTimer });
+      });
+      await Promise.all(cardBodies.map(function(item) {
+        return fetch(CHAT_ENDPOINT, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ s3_key: item.key, question: q, chat_history: [] }),
+        }).then(function(res) { if (!res.ok) throw new Error(); return res.json(); })
+          .then(function(data) { clearInterval(item.timer); item.body.textContent = data.answer; item.body.className = "card-body"; })
+          .catch(function() { clearInterval(item.timer); item.body.textContent = "Error getting response."; item.body.className = "card-body error"; });
+      }));
+      allSetBusy(false); allInput.value = ""; allInput.focus();
+    }
+
+    allSendCombined.addEventListener("click", askCombined);
+    allSendPerFile.addEventListener("click", askPerFile);
+    allInput.addEventListener("keydown", function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askCombined(); } });
+
+    // ── Speech-to-text ──────────────────────────────────────────
+    (function() {
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { document.querySelectorAll(".mic-btn").forEach(function(b) { b.style.display = "none"; }); return; }
+      function makeMic(btnId, textareaId) {
+        var btn = document.getElementById(btnId), textarea = document.getElementById(textareaId);
+        var recog = new SR(); recog.lang = "en-US"; recog.continuous = true; recog.interimResults = true;
+        var isListening = false, baseText = "";
+        recog.onstart = function() { isListening = true; baseText = textarea.value; btn.classList.add("listening"); btn.title = "Click to stop"; };
+        recog.onresult = function(e) {
+          var interim = "", final = "";
+          for (var i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript;
+            else interim += e.results[i][0].transcript;
+          }
+          if (final) baseText += (baseText && !baseText.endsWith(" ") ? " " : "") + final.trim();
+          textarea.value = baseText + (interim ? " " + interim : "");
+        };
+        recog.onerror = function() { stopListening(); };
+        recog.onend   = function() { if (isListening) { try { recog.start(); } catch(e) { stopListening(); } } };
+        function stopListening() { isListening = false; btn.classList.remove("listening"); btn.title = "Click to speak"; try { recog.stop(); } catch(e) {} textarea.value = textarea.value.trim(); }
+        btn.addEventListener("click", function() { if (isListening) stopListening(); else try { recog.start(); } catch(e) {} });
+      }
+      makeMic("mic-perfile", "chat-input");
+      makeMic("mic-all",     "all-input");
+    })();
+
+    // ── SMS Outreach ────────────────────────────────────────────
+    function populateSmsFileSelect() {
+      var sel = document.getElementById("sms-file-select");
+      sel.innerHTML = "<option value=''>— select an uploaded file —</option>";
+      uploadedKeys.forEach(function(f) {
+        if (f.name && f.name.match(/\.xlsx?$/i)) {
+          var opt = document.createElement("option"); opt.value = f.key; opt.textContent = f.name; sel.appendChild(opt);
+        }
+      });
+    }
+
+    function showSmsStatus(msg, type) {
+      var el = document.getElementById("sms-status");
+      el.textContent = msg; el.style.display = "block";
+      el.style.background = type === "success" ? "#f0fdf4" : type === "error" ? "#fef2f2" : "#eff6ff";
+      el.style.color      = type === "success" ? "#16a34a" : type === "error" ? "#dc2626" : "#2563eb";
+      el.style.border     = "1px solid " + (type === "success" ? "#bbf7d0" : type === "error" ? "#fecaca" : "#bfdbfe");
+    }
+
+    document.getElementById("sms-type-select").addEventListener("change", function() {
+      var msgType = this.value, prev = document.getElementById("sms-preview");
+      prev.textContent = msgType === "balance"
+        ? 'Each patient will receive: "Hi [Name], you have an outstanding bill amount due of $[Amount]. Call 480-406-5664 at your convenience."'
+        : 'Each patient will receive: "Hi [Name], this is a reminder to schedule your Annual Wellness Visit. Please call Wonderful Clinic at 480-406-5664."';
+      prev.style.display = "block";
+    });
+
+    async function sendSmsReminders() {
+      var excelKey = document.getElementById("sms-file-select").value;
+      var msgType  = document.getElementById("sms-type-select").value;
+      if (!excelKey) { showSmsStatus("Please select a patient Excel file first.", "error"); return; }
+      var btn = document.getElementById("sms-send-btn");
+      btn.disabled = true; btn.textContent = "Sending…";
+      showSmsStatus("Sending SMS reminders…", "info");
+      try {
+        var res  = await fetch(SMS_SEND_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ excel_key: excelKey, message_type: msgType }) });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || "HTTP " + res.status);
+        showSmsStatus("✓ " + data.message, "success");
+        setTimeout(loadSmsConversations, 2000);
+      } catch (err) { showSmsStatus("Error: " + err.message, "error"); }
+      btn.disabled = false; btn.textContent = "Send Reminders";
+    }
+
+    async function loadSmsConversations() {
+      var wrap = document.getElementById("sms-conversations-wrap");
+      var btn  = document.getElementById("sms-refresh-btn");
+      btn.disabled = true;
+      wrap.innerHTML = "<p style='text-align:center;color:#9ca3af;font-size:0.9rem;padding:20px 0;'>Loading replies…</p>";
+      try {
+        var res  = await fetch(SMS_CONV_ENDPOINT, { method: "GET" });
+        var data = await res.json();
+        var convs = data.conversations || [];
+        if (!convs.length) { wrap.innerHTML = "<p style='text-align:center;color:#9ca3af;font-size:0.9rem;padding:20px 0;'>No messages sent yet.</p>"; }
+        else {
+          var html = "<div style='overflow-x:auto;border:1px solid #e5e7eb;border-radius:10px;'><table style='width:100%;border-collapse:collapse;font-size:0.85rem;'><thead><tr style='background:#f3f4f6;'><th style='padding:10px 14px;text-align:left;border-bottom:1px solid #e5e7eb;'>Patient</th><th style='padding:10px 14px;text-align:left;border-bottom:1px solid #e5e7eb;'>Phone</th><th style='padding:10px 14px;text-align:left;border-bottom:1px solid #e5e7eb;'>Amount</th><th style='padding:10px 14px;text-align:left;border-bottom:1px solid #e5e7eb;'>Status</th><th style='padding:10px 14px;text-align:left;border-bottom:1px solid #e5e7eb;'>Last Reply</th></tr></thead><tbody>";
+          convs.forEach(function(c) {
+            var badge = c.opt_out ? "<span style='background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:99px;font-size:0.72rem;font-weight:600;'>Opted Out</span>" : c.reply_count > 0 ? "<span style='background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:99px;font-size:0.72rem;font-weight:600;'>Replied (" + c.reply_count + ")</span>" : "<span style='background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:99px;font-size:0.72rem;font-weight:600;'>Sent</span>";
+            var reply = c.last_reply ? c.last_reply.substring(0, 80) + (c.last_reply.length > 80 ? "…" : "") : "<span style='color:#9ca3af;font-style:italic;'>—</span>";
+            html += "<tr><td style='padding:10px 14px;border-bottom:1px solid #e5e7eb;'>" + (c.patient_name || "—") + "</td><td style='padding:10px 14px;border-bottom:1px solid #e5e7eb;white-space:nowrap;'>" + c.phone + "</td><td style='padding:10px 14px;border-bottom:1px solid #e5e7eb;white-space:nowrap;'>$" + (c.amount_due || "0") + "</td><td style='padding:10px 14px;border-bottom:1px solid #e5e7eb;'>" + badge + "</td><td style='padding:10px 14px;border-bottom:1px solid #e5e7eb;max-width:220px;word-break:break-word;'>" + reply + "</td></tr>";
+          });
+          html += "</tbody></table></div>";
+          wrap.innerHTML = html;
+        }
+      } catch (err) { wrap.innerHTML = "<p style='color:#dc2626;text-align:center;font-size:0.9rem;'>Could not load replies. Please try again.</p>"; }
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>
