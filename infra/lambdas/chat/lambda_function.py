@@ -1,5 +1,5 @@
 """
-chat Lambda
+chat Lambda  (updated for kbuddhiai.com — logic unchanged, env vars updated)
 -------------------------------------------------------------
 POST /chat
 
@@ -8,24 +8,22 @@ Handles:
   - s3_keys=[...]       → combined multi-file question
   - s3_key=...          → single-file question
 
-AI backend: Amazon Bedrock (Claude) — invoked via the Lambda's own IAM
-role, no third-party API key. Patient data never leaves AWS's HIPAA
-BAA boundary (unlike the previous OpenRouter-based implementation).
+AI backend: OpenRouter → openai/gpt-5.5  (key stays server-side)
 """
 
 import io
 import json
 import os
+import urllib.error
+import urllib.request
 
 import boto3
 from botocore.config import Config
-from botocore.exceptions import ClientError
 
-BUCKET_NAME      = os.environ.get("BUCKET_NAME",    "")
-BUCKET_REGION    = os.environ.get("BUCKET_REGION",  "us-east-2")
-ALLOWED_ORIGIN   = os.environ.get("ALLOWED_ORIGIN", "https://kbuddhiai.com")
-BEDROCK_REGION   = os.environ.get("BEDROCK_REGION", "us-east-2")
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0")
+BUCKET_NAME    = os.environ.get("BUCKET_NAME",    "")
+BUCKET_REGION  = os.environ.get("BUCKET_REGION",  "us-east-2")
+ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "https://kbuddhiai.com")
+OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin":  ALLOWED_ORIGIN,
@@ -85,11 +83,11 @@ def extract_text(file_bytes: bytes, filename: str) -> str:
             return "[Could not extract text from this file type]"
 
 
-# ── Bedrock (Claude) call ──────────────────────────────────────────────────────
+# ── OpenRouter call ────────────────────────────────────────────────────────────
 
 MAX_FILE_CHARS = 450000
 
-def call_bedrock(file_text: str, question: str, chat_history: list) -> str:
+def call_openrouter(file_text: str, question: str, chat_history: list) -> str:
     truncated = file_text[:MAX_FILE_CHARS]
     if len(file_text) > MAX_FILE_CHARS:
         truncated += "\n\n[... file truncated for context length ...]"
@@ -100,23 +98,33 @@ def call_bedrock(file_text: str, question: str, chat_history: list) -> str:
         f"FILE CONTENT:\n{truncated}"
     )
 
-    # Converse API: system prompt is a separate top-level param, not a
-    # message with role "system". chat_history is already {role, content}
-    # pairs alternating user/assistant, which is what Converse expects —
-    # just needs each "content" wrapped as [{"text": ...}].
-    messages = []
+    messages = [{"role": "system", "content": system_msg}]
     for msg in chat_history:
-        messages.append({"role": msg["role"], "content": [{"text": msg["content"]}]})
-    messages.append({"role": "user", "content": [{"text": question}]})
+        messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": question})
 
-    bedrock = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
-    response = bedrock.converse(
-        modelId=BEDROCK_MODEL_ID,
-        system=[{"text": system_msg}],
-        messages=messages,
-        inferenceConfig={"maxTokens": 32000},
+    payload = json.dumps({
+        "model":      "openai/gpt-5.5",
+        "messages":   messages,
+        "max_tokens": 32000,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://openrouter.ai/api/v1/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_KEY}",
+            "Content-Type":  "application/json",
+            "HTTP-Referer":  "https://kbuddhiai.com",
+            "X-Title":       "kBuddhi AI File Chat",
+        },
+        method="POST",
     )
-    return response["output"]["message"]["content"][0]["text"]
+
+    with urllib.request.urlopen(req, timeout=270) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+
+    return result["choices"][0]["message"]["content"]
 
 
 # ── Lambda handler ─────────────────────────────────────────────────────────────
@@ -186,7 +194,7 @@ def lambda_handler(event, context):
                     print(f"Could not read {key}: {e}")
                     sections.append(f"{'='*60}\nFILE: {key}\n{'='*60}\n[Could not read this file]")
 
-            answer = call_bedrock("\n\n".join(sections), question, chat_history)
+            answer = call_openrouter("\n\n".join(sections), question, chat_history)
             return resp(200, {"answer": answer})
 
         # ── Single-file mode ──────────────────────────────────────────────────
@@ -196,12 +204,13 @@ def lambda_handler(event, context):
         obj        = s3_client.get_object(Bucket=BUCKET_NAME, Key=s3_key)
         file_bytes = obj["Body"].read()
         file_text  = extract_text(file_bytes, s3_key)
-        answer     = call_bedrock(file_text, question, chat_history)
+        answer     = call_openrouter(file_text, question, chat_history)
         return resp(200, {"answer": answer})
 
-    except ClientError as e:
-        print("Bedrock ClientError:", e)
-        return resp(502, {"error": "LLM call failed", "detail": str(e)})
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")
+        print("OpenRouter HTTPError:", e.code, detail)
+        return resp(502, {"error": "LLM call failed", "detail": detail})
     except Exception as e:
         print("Error:", e)
         return resp(500, {"error": "Internal server error", "detail": str(e)})

@@ -5,15 +5,13 @@ Function URL only (no API Gateway route — see chat Lambda's history
 with the 29s API Gateway timeout for why).
 
 Answers questions about a single tabular file (CSV or Excel) by having
-Claude (via Amazon Bedrock) write a SQL query against the file's real
-schema, executing that query with DuckDB in-process (no external query
-service to wait on), then asking Claude to phrase the small result set
-as a natural-language answer. The model only ever sees the column
-schema, a few sample rows, and the final (small) query result — never
-the whole file — so this can't time out or need a giant context window
-the way the raw-text chat endpoint does. Bedrock is invoked via the
-Lambda's own IAM role — no third-party API key, patient data stays
-inside AWS's HIPAA BAA boundary.
+GPT-5.5 write a SQL query against the file's real schema, executing that
+query with DuckDB in-process (no external query service to wait on),
+then asking GPT-5.5 to phrase the small result set as a natural-language
+answer. The model only ever sees the column schema, a few sample rows,
+and the final (small) query result — never the whole file — so this
+can't time out or need a giant context window the way the raw-text
+chat endpoint does.
 
 Request:  { "s3_key": "uploads/user_id=.../file.csv", "question": "..." }
 Response: { "answer": "...", "sql": "<the generated query>" }
@@ -24,16 +22,16 @@ import io
 import json
 import os
 import re
+import urllib.error
+import urllib.request
 
 import boto3
 import duckdb
-from botocore.exceptions import ClientError
 
-BUCKET_NAME      = os.environ.get("BUCKET_NAME", "")
-BUCKET_REGION    = os.environ.get("BUCKET_REGION", "us-east-2")
-ALLOWED_ORIGIN   = os.environ.get("ALLOWED_ORIGIN", "https://kbuddhiai.com")
-BEDROCK_REGION   = os.environ.get("BEDROCK_REGION", "us-east-2")
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0")
+BUCKET_NAME    = os.environ.get("BUCKET_NAME", "")
+BUCKET_REGION  = os.environ.get("BUCKET_REGION", "us-east-2")
+ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "https://kbuddhiai.com")
+OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
 TABULAR_EXTENSIONS = {"csv", "txt", "xlsx", "xls"}
 
@@ -74,14 +72,29 @@ def to_csv_path(file_bytes: bytes, filename: str) -> str:
 # ── LLM calls ───────────────────────────────────────────────────────────────
 
 def call_llm(system_msg: str, user_msg: str, max_tokens: int) -> str:
-    bedrock = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
-    response = bedrock.converse(
-        modelId=BEDROCK_MODEL_ID,
-        system=[{"text": system_msg}],
-        messages=[{"role": "user", "content": [{"text": user_msg}]}],
-        inferenceConfig={"maxTokens": max_tokens},
+    payload = json.dumps({
+        "model": "openai/gpt-5.5",
+        "messages": [
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_msg},
+        ],
+        "max_tokens": max_tokens,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://openrouter.ai/api/v1/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_KEY}",
+            "Content-Type":  "application/json",
+            "HTTP-Referer":  "https://kbuddhiai.com",
+            "X-Title":       "kBuddhi AI Structured Query",
+        },
+        method="POST",
     )
-    return response["output"]["message"]["content"][0]["text"]
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+    return result["choices"][0]["message"]["content"]
 
 
 def extract_sql(raw: str) -> str:
@@ -183,9 +196,10 @@ def lambda_handler(event, context):
         answer = phrase_answer(question, columns, rows)
         return resp(200, {"answer": answer, "sql": sql})
 
-    except ClientError as e:
-        print("Bedrock ClientError:", e)
-        return resp(502, {"error": "LLM call failed", "detail": str(e)})
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")
+        print("OpenRouter HTTPError:", e.code, detail)
+        return resp(502, {"error": "LLM call failed", "detail": detail})
     except Exception as e:
         print("Error:", e)
         return resp(500, {"error": "Internal server error", "detail": str(e)})
