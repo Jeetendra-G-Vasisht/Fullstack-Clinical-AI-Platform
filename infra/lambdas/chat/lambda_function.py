@@ -85,9 +85,11 @@ def extract_text(file_bytes: bytes, filename: str) -> str:
 
 # ── OpenRouter call ────────────────────────────────────────────────────────────
 
+MAX_FILE_CHARS = 450000
+
 def call_openrouter(file_text: str, question: str, chat_history: list) -> str:
-    truncated = file_text[:60000]
-    if len(file_text) > 60000:
+    truncated = file_text[:MAX_FILE_CHARS]
+    if len(file_text) > MAX_FILE_CHARS:
         truncated += "\n\n[... file truncated for context length ...]"
 
     system_msg = (
@@ -102,8 +104,9 @@ def call_openrouter(file_text: str, question: str, chat_history: list) -> str:
     messages.append({"role": "user", "content": question})
 
     payload = json.dumps({
-        "model":    "openai/gpt-5.5",
-        "messages": messages,
+        "model":      "openai/gpt-5.5",
+        "messages":   messages,
+        "max_tokens": 32000,
     }).encode("utf-8")
 
     req = urllib.request.Request(
@@ -118,7 +121,7 @@ def call_openrouter(file_text: str, question: str, chat_history: list) -> str:
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=270) as resp:
         result = json.loads(resp.read().decode("utf-8"))
 
     return result["choices"][0]["message"]["content"]
@@ -129,6 +132,16 @@ def call_openrouter(file_text: str, question: str, chat_history: list) -> str:
 def lambda_handler(event, context):
     if event.get("httpMethod") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
+
+    # Lambda Function URLs (payload format v2.0) already inject their own
+    # Access-Control-Allow-Origin header per the CORS config on the URL
+    # resource. Adding our own on top of that produces two conflicting
+    # headers, which browsers reject. Only add ours for the API Gateway
+    # route (v1 proxy integration), which has no such built-in handling.
+    is_function_url = event.get("version") == "2.0"
+
+    def resp(status, body):
+        return _resp(status, body, {} if is_function_url else CORS_HEADERS)
 
     try:
         body         = json.loads(event.get("body") or "{}")
@@ -160,14 +173,14 @@ def lambda_handler(event, context):
                         "last_modified": obj["LastModified"].strftime("%Y-%m-%d %H:%M UTC"),
                     })
             files.sort(key=lambda f: f["last_modified"], reverse=True)
-            return _resp(200, {"files": files})
+            return resp(200, {"files": files})
 
         if not question:
-            return _resp(400, {"error": "question is required"})
+            return resp(400, {"error": "question is required"})
 
         # ── Multi-file combined mode ───────────────────────────────────────────
         if s3_keys:
-            per_file_limit = max(8000, 120000 // len(s3_keys))
+            per_file_limit = max(60000, MAX_FILE_CHARS // len(s3_keys))
             sections = []
             for key in s3_keys:
                 try:
@@ -182,30 +195,30 @@ def lambda_handler(event, context):
                     sections.append(f"{'='*60}\nFILE: {key}\n{'='*60}\n[Could not read this file]")
 
             answer = call_openrouter("\n\n".join(sections), question, chat_history)
-            return _resp(200, {"answer": answer})
+            return resp(200, {"answer": answer})
 
         # ── Single-file mode ──────────────────────────────────────────────────
         if not s3_key:
-            return _resp(400, {"error": "s3_key or s3_keys is required"})
+            return resp(400, {"error": "s3_key or s3_keys is required"})
 
         obj        = s3_client.get_object(Bucket=BUCKET_NAME, Key=s3_key)
         file_bytes = obj["Body"].read()
         file_text  = extract_text(file_bytes, s3_key)
         answer     = call_openrouter(file_text, question, chat_history)
-        return _resp(200, {"answer": answer})
+        return resp(200, {"answer": answer})
 
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="replace")
         print("OpenRouter HTTPError:", e.code, detail)
-        return _resp(502, {"error": "LLM call failed", "detail": detail})
+        return resp(502, {"error": "LLM call failed", "detail": detail})
     except Exception as e:
         print("Error:", e)
-        return _resp(500, {"error": "Internal server error", "detail": str(e)})
+        return resp(500, {"error": "Internal server error", "detail": str(e)})
 
 
-def _resp(status: int, body: dict) -> dict:
+def _resp(status: int, body: dict, headers: dict = CORS_HEADERS) -> dict:
     return {
         "statusCode": status,
-        "headers":    CORS_HEADERS,
+        "headers":    headers,
         "body":       json.dumps(body),
     }

@@ -239,7 +239,7 @@ input.error { border-color: #ef4444; }
 .chat-bubble { max-width: 88%; padding: 9px 13px; border-radius: 12px; font-size: 0.86rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
 .chat-bubble.user      { align-self: flex-end; background: #2563eb; color: #fff; border-bottom-right-radius: 3px; }
 .chat-bubble.assistant { align-self: flex-start; background: #fff; color: #111827; border: 1px solid #e5e7eb; border-bottom-left-radius: 3px; }
-.chat-bubble.thinking  { align-self: flex-start; background: #fff; color: #9ca3af; font-style: italic; border: 1px solid #e5e7eb; border-bottom-left-radius: 3px; }
+.chat-bubble.thinking  { align-self: flex-start; background: #fff; color: #9ca3af; font-style: italic; border: 1px solid #e5e7eb; border-bottom-left-radius: 3px; animation: thinkingPulse 1.4s ease-in-out infinite; }
 
 .textarea-with-mic { position: relative; margin-bottom: 8px; }
 .textarea-with-mic .chat-textarea { padding-right: 44px; }
@@ -256,6 +256,7 @@ input.error { border-color: #ef4444; }
 .mic-btn.listening svg { fill: #dc2626; }
 .mic-btn:disabled { opacity: 0.3; cursor: not-allowed; animation: none; }
 @keyframes micPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes thinkingPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 
 .chat-textarea {
   display: block; width: 100%; padding: 10px 12px;
@@ -277,13 +278,13 @@ input.error { border-color: #ef4444; }
 .combined-answer { border: 1px solid #e5e7eb; border-radius: 9px; overflow: hidden; margin-bottom: 12px; }
 .combined-answer .combined-header { padding: 8px 12px; font-size: 0.775rem; font-weight: 600; background: #eff6ff; color: #1e40af; border-bottom: 1px solid #bfdbfe; }
 .combined-answer .combined-body { padding: 12px; font-size: 0.85rem; line-height: 1.6; color: #111827; white-space: pre-wrap; word-break: break-word; }
-.combined-answer .combined-body.loading { color: #6b7280; font-style: italic; }
+.combined-answer .combined-body.loading { color: #6b7280; font-style: italic; animation: thinkingPulse 1.4s ease-in-out infinite; }
 .combined-answer .combined-body.error   { color: #ef4444; }
 
 .all-result-card { border: 1px solid #e5e7eb; border-radius: 9px; overflow: hidden; margin-bottom: 8px; }
 .all-result-card .card-file-name { padding: 7px 12px; font-size: 0.775rem; font-weight: 600; background: #f3f4f6; color: #374151; border-bottom: 1px solid #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .all-result-card .card-body { padding: 10px 12px; font-size: 0.85rem; line-height: 1.55; color: #111827; white-space: pre-wrap; word-break: break-word; }
-.all-result-card .card-body.loading { color: #6b7280; font-style: italic; }
+.all-result-card .card-body.loading { color: #6b7280; font-style: italic; animation: thinkingPulse 1.4s ease-in-out infinite; }
 .all-result-card .card-body.error   { color: #ef4444; }
 
 @media (max-width: 480px) {
