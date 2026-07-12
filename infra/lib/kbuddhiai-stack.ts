@@ -44,6 +44,10 @@ import { Construct } from 'constructs';
 const DOMAIN = 'kbuddhiai.com';
 const SES_FROM = `noreply@${DOMAIN}`;
 const ALLOWED_ORIGIN = `https://${DOMAIN}`;
+// Claude Sonnet 5 is not yet enabled for this account (verified via a direct
+// invoke, which returned AccessDeniedException) — Sonnet 4.5 is confirmed
+// working. Swap this one constant if/when Sonnet 5 access is granted.
+const BEDROCK_MODEL_ID = 'us.anthropic.claude-sonnet-4-5-20250929-v1:0';
 
 export class KbuddhiStack extends cdk.Stack {
   /** Exposed so the cert stack can import the zone for DNS validation */
@@ -327,6 +331,14 @@ export class KbuddhiStack extends cdk.Stack {
               actions: ['glue:StartJobRun', 'glue:GetJobRun'],
               resources: ['*'],
             }),
+            // Bedrock — Claude invocation for kbuddhiai-chat (replaces OpenRouter)
+            new iam.PolicyStatement({
+              actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
+              resources: [
+                `arn:aws:bedrock:${this.region}:${this.account}:inference-profile/${BEDROCK_MODEL_ID}`,
+                `arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0`,
+              ],
+            }),
           ],
         }),
       },
@@ -431,9 +443,7 @@ export class KbuddhiStack extends cdk.Stack {
       memorySize: 1024,
       environment: {
         ...commonEnv,
-        // OPENROUTER_API_KEY is set manually via AWS Console or Secrets Manager
-        // to avoid committing the key to source control.
-        OPENROUTER_API_KEY: '',
+        BEDROCK_MODEL_ID: BEDROCK_MODEL_ID,
       },
     });
 
@@ -468,6 +478,17 @@ export class KbuddhiStack extends cdk.Stack {
             new iam.PolicyStatement({
               actions: ['s3:GetObject'],
               resources: [`${uploadsBucket.bucketArn}/*`],
+            }),
+          ],
+        }),
+        InvokeBedrock: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
+              resources: [
+                `arn:aws:bedrock:${this.region}:${this.account}:inference-profile/${BEDROCK_MODEL_ID}`,
+                `arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0`,
+              ],
             }),
           ],
         }),
@@ -510,7 +531,7 @@ export class KbuddhiStack extends cdk.Stack {
       memorySize: 1024,
       environment: {
         ...commonEnv,
-        OPENROUTER_API_KEY: '',
+        BEDROCK_MODEL_ID: BEDROCK_MODEL_ID,
       },
     });
 
