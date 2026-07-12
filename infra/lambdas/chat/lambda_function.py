@@ -25,7 +25,7 @@ BUCKET_NAME      = os.environ.get("BUCKET_NAME",    "")
 BUCKET_REGION    = os.environ.get("BUCKET_REGION",  "us-east-2")
 ALLOWED_ORIGIN   = os.environ.get("ALLOWED_ORIGIN", "https://kbuddhiai.com")
 BEDROCK_REGION   = os.environ.get("BEDROCK_REGION", "us-east-2")
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0")
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-6")
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin":  ALLOWED_ORIGIN,
@@ -87,7 +87,11 @@ def extract_text(file_bytes: bytes, filename: str) -> str:
 
 # ── Bedrock (Claude) call ──────────────────────────────────────────────────────
 
-MAX_FILE_CHARS = 450000
+# Claude Sonnet 4.6 has a 1M token context window (vs. the 200K-token model
+# this budget was originally tuned for). At the ~2 chars/token density typical
+# of dense tabular data, 1,200,000 chars is ~600K tokens — well under the 1M
+# ceiling with real margin left for the system prompt, question, and output.
+MAX_FILE_CHARS = 1200000
 
 def call_bedrock(file_text: str, question: str, chat_history: list) -> str:
     truncated = file_text[:MAX_FILE_CHARS]
@@ -172,7 +176,7 @@ def lambda_handler(event, context):
 
         # ── Multi-file combined mode ───────────────────────────────────────────
         if s3_keys:
-            per_file_limit = max(60000, MAX_FILE_CHARS // len(s3_keys))
+            per_file_limit = max(150000, MAX_FILE_CHARS // len(s3_keys))
             sections = []
             for key in s3_keys:
                 try:

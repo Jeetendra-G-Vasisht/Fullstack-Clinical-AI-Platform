@@ -45,9 +45,11 @@ const DOMAIN = 'kbuddhiai.com';
 const SES_FROM = `noreply@${DOMAIN}`;
 const ALLOWED_ORIGIN = `https://${DOMAIN}`;
 // Claude Sonnet 5 is not yet enabled for this account (verified via a direct
-// invoke, which returned AccessDeniedException) — Sonnet 4.5 is confirmed
-// working. Swap this one constant if/when Sonnet 5 access is granted.
-const BEDROCK_MODEL_ID = 'us.anthropic.claude-sonnet-4-5-20250929-v1:0';
+// invoke, which returned AccessDeniedException). Sonnet 4.5 worked but caps
+// out at a 200K token context window — too small for combined multi-file
+// chat (hit 217,985 tokens on just 2 files). Sonnet 4.6 has a 1M token
+// window at the same "Sonnet" tier/pricing, confirmed invokable — use that.
+const BEDROCK_MODEL_ID = 'us.anthropic.claude-sonnet-4-6';
 
 export class KbuddhiStack extends cdk.Stack {
   /** Exposed so the cert stack can import the zone for DNS validation */
@@ -336,7 +338,7 @@ export class KbuddhiStack extends cdk.Stack {
               actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
               resources: [
                 `arn:aws:bedrock:${this.region}:${this.account}:inference-profile/${BEDROCK_MODEL_ID}`,
-                `arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0`,
+                `arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6`,
               ],
             }),
           ],
@@ -487,7 +489,7 @@ export class KbuddhiStack extends cdk.Stack {
               actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
               resources: [
                 `arn:aws:bedrock:${this.region}:${this.account}:inference-profile/${BEDROCK_MODEL_ID}`,
-                `arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0`,
+                `arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6`,
               ],
             }),
           ],

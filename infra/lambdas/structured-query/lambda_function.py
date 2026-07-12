@@ -33,7 +33,7 @@ BUCKET_NAME      = os.environ.get("BUCKET_NAME", "")
 BUCKET_REGION    = os.environ.get("BUCKET_REGION", "us-east-2")
 ALLOWED_ORIGIN   = os.environ.get("ALLOWED_ORIGIN", "https://kbuddhiai.com")
 BEDROCK_REGION   = os.environ.get("BEDROCK_REGION", "us-east-2")
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20250929-v1:0")
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-6")
 
 TABULAR_EXTENSIONS = {"csv", "txt", "xlsx", "xls"}
 
@@ -101,14 +101,33 @@ def is_safe_select(sql: str) -> bool:
     return not any(word in lowered for word in FORBIDDEN_SQL_KEYWORDS)
 
 
-def generate_sql(schema_desc: str, sample_desc: str, question: str) -> str:
-    system_msg = (
+def sql_system_prompt(schema_desc: str, sample_desc: str) -> str:
+    return (
         "You write a single DuckDB SQL SELECT query against a table named `data`. "
         "Output ONLY the raw SQL — no explanation, no markdown fences. "
         "Double-quote any column name that contains spaces or special characters.\n\n"
         f"Table schema (column, type):\n{schema_desc}\n\nSample rows:\n{sample_desc}"
     )
-    return extract_sql(call_llm(system_msg, question, max_tokens=500))
+
+
+def generate_sql(schema_desc: str, sample_desc: str, question: str) -> str:
+    return extract_sql(call_llm(sql_system_prompt(schema_desc, sample_desc), question, max_tokens=500))
+
+
+def fix_sql(schema_desc: str, sample_desc: str, question: str, bad_sql: str, error: Exception) -> str:
+    # Reuses the exact same system prompt as the first attempt (same "table
+    # is named `data`" / "raw SQL only" instructions) instead of a stripped-
+    # down one — a prior version dropped both that instruction and the
+    # original question here, which made retries prone to drifting into
+    # prose and failing the safety check instead of producing valid SQL.
+    fix_request = (
+        f"Original question: {question}\n\n"
+        f"Your previous query failed with this error:\n{error}\n\n"
+        f"Previous query:\n{bad_sql}\n\n"
+        "Fix the query so it correctly answers the original question. "
+        "Output ONLY the corrected raw SQL, nothing else."
+    )
+    return extract_sql(call_llm(sql_system_prompt(schema_desc, sample_desc), fix_request, max_tokens=500))
 
 
 def phrase_answer(question: str, columns: list, rows: list) -> str:
@@ -167,17 +186,17 @@ def lambda_handler(event, context):
             columns = [d[0] for d in result.description]
             rows    = result.fetchall()
         except Exception as e:
-            # One retry — feed the error back and ask GPT to fix the query.
-            fix_prompt = f"This query failed with error: {e}\nQuery: {sql}\nFix it."
-            sql2 = extract_sql(call_llm(
-                f"Table schema (column, type):\n{schema_desc}\n\nSample rows:\n{sample_desc}",
-                fix_prompt, max_tokens=500,
-            ))
+            # One retry — feed the error and original question back so the
+            # fix keeps the same intent instead of just patching syntax.
+            sql2 = fix_sql(schema_desc, sample_desc, question, sql, e)
             if not is_safe_select(sql2):
                 return resp(500, {"error": f"Query failed: {e}", "sql": sql})
-            result  = con.execute(sql2)
-            columns = [d[0] for d in result.description]
-            rows    = result.fetchall()
+            try:
+                result  = con.execute(sql2)
+                columns = [d[0] for d in result.description]
+                rows    = result.fetchall()
+            except Exception as e2:
+                return resp(500, {"error": f"Query failed after retry: {e2}", "sql": sql2})
             sql = sql2
 
         answer = phrase_answer(question, columns, rows)
