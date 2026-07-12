@@ -860,13 +860,24 @@
         var perFileTimer = startThinkingTimer(body, "Asking…");
         cardBodies.push({ body: body, key: item.key, timer: perFileTimer });
       });
-      await Promise.all(cardBodies.map(function(item) {
-        return fetch(CHAT_ENDPOINT, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ s3_key: item.key, question: q, chat_history: [] }),
-        }).then(function(res) { if (!res.ok) throw new Error(); return res.json(); })
-          .then(function(data) { clearInterval(item.timer); item.body.textContent = data.answer; item.body.className = "card-body"; })
-          .catch(function() { clearInterval(item.timer); item.body.textContent = "Error getting response."; item.body.className = "card-body error"; });
+      await Promise.all(cardBodies.map(async function(item) {
+        try {
+          var answer = await tryStructuredQuery(item.key, q);
+          if (answer === null) {
+            var res = await fetch(CHAT_ENDPOINT, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ s3_key: item.key, question: q, chat_history: [] }),
+            });
+            if (!res.ok) throw new Error();
+            var data = await res.json();
+            answer = data.answer;
+          }
+          clearInterval(item.timer);
+          item.body.textContent = answer; item.body.className = "card-body";
+        } catch (err) {
+          clearInterval(item.timer);
+          item.body.textContent = "Error getting response."; item.body.className = "card-body error";
+        }
       }));
       allSetBusy(false); allInput.value = ""; allInput.focus();
     }

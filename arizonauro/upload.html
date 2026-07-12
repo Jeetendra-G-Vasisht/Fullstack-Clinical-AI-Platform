@@ -671,23 +671,27 @@
 
       allResults.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
-      var promises = cardBodies.map(function(item) {
-        return fetch(CHAT_ENDPOINT, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ s3_key: item.key, question: q, chat_history: [] }),
-        }).then(function(res) {
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          return res.json();
-        }).then(function(data) {
+      var promises = cardBodies.map(async function(item) {
+        try {
+          var answer = await tryStructuredQuery(item.key, q);
+          if (answer === null) {
+            var res = await fetch(CHAT_ENDPOINT, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ s3_key: item.key, question: q, chat_history: [] }),
+            });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            var data = await res.json();
+            answer = data.answer;
+          }
           clearInterval(item.timer);
-          item.body.textContent = data.answer;
+          item.body.textContent = answer;
           item.body.className = "card-body";
-        }).catch(function(err) {
+        } catch (err) {
           clearInterval(item.timer);
           item.body.textContent = "Error: could not get a response.";
           item.body.className = "card-body error";
           console.error("Per-file ask error:", item.key, err);
-        });
+        }
       });
 
       await Promise.all(promises);
