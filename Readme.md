@@ -32,6 +32,8 @@ A production-grade, HIPAA-conscious AI portal for healthcare document intelligen
 | File Upload | AWS Lambda + API Gateway (pre-signed POST URLs) |
 | AI Chat Backend | AWS Lambda (Function URL) + OpenRouter (GPT-5.5) |
 | Structured Data Queries | AWS Lambda (Function URL) + DuckDB (embedded SQL engine) + GPT-5.5 |
+| Multi-Agent Review Pipeline | [LangGraph](https://github.com/langchain-ai/langgraph) supervisor/worker graph + self-check gate — built and evaluated, not yet deployed (see below) |
+| Agent/Tool Interop | [MCP](https://modelcontextprotocol.io) (Model Context Protocol) — exposes the review pipeline as a uniform tool interface |
 | Bounce/Complaint Monitoring | Amazon SNS, wired to an SES Configuration Set |
 | Data Processing | AWS Glue + Apache Athena (Phase 2 scaffold — provisioned, not currently in the query path) |
 | DNS | Amazon Route 53 |
@@ -202,6 +204,27 @@ Microphone button on every chat input. Click → speak → transcribed automatic
 
 ---
 
+## Multi-Agent Review Pipeline (LangGraph + MCP)
+
+A separate service, `infra/lambdas/review-pipeline/`, built for the class of problem document/record review systems actually face: deciding which patient record an uploaded document's extracted metadata (name, DOB, MRN) belongs to, when the extraction is noisy or the candidate pool has near-duplicates.
+
+**Architecture:** a LangGraph supervisor decomposes a matching task into per-field subtasks and delegates to three specialized worker nodes (name, DOB, identifier matchers), each returning a similarity score *and* its own confidence. A supervisor-aggregate node combines worker output into a ranked candidate list and one overall confidence. A **self-check gate** then decides the outcome: if confidence clears the threshold, the case auto-resolves; if not, it's routed to `needs_human_review` instead of guessed. Every node logs to a structured trace, so a bad final answer can always be traced back to the exact worker/field that caused it.
+
+**MCP interface:** the pipeline is exposed as an MCP server (`mcp_server.py`, via `review_match` / `list_review_thresholds` tools) so any MCP-speaking caller invokes it the same way, instead of every integration wrapping it ad hoc. It's also wired as a Lambda Function URL handler (`lambda_function.py`) — both entry points call the identical `pipeline.run_review()`, so behavior is the same regardless of transport.
+
+**Measured impact of the self-check gate** — 60-case labeled validation set, deterministic and fully reproducible, no LLM/API calls (`infra/lambdas/review-pipeline/eval/`):
+
+| | Without the gate (commits to every match) | With the gate (self-check on) |
+|---|---|---|
+| Accuracy | 73.3% (44/60) | **100%** on the 45/60 cases it auto-resolves |
+| Cases routed to human review instead of guessed | 0% | 25% (15/60) |
+
+Of the escalated cases, 40% would have been wrong had the pipeline been forced to guess — the gate targets genuinely ambiguous cases, not firing at random. Full methodology, per-case results, and how to reproduce these numbers: `infra/lambdas/review-pipeline/README.md`.
+
+**Status:** built and evaluated in this repo; intentionally not yet wired into `infra/lib/kbuddhiai-stack.ts` or deployed.
+
+---
+
 ## File Support
 
 | Format | Extraction | Answered via |
@@ -300,6 +323,8 @@ All infrastructure is defined as code in `infra/` and deployed via `cdk deploy`.
     │   ├── get-upload-url/      → Pre-signed S3 upload
     │   ├── chat/                → General-purpose AI document Q&A (full-text path)
     │   ├── structured-query/    → Fast DuckDB SQL Q&A for CSV/Excel files
+    │   ├── review-pipeline/     → Multi-agent review/matching pipeline (LangGraph + MCP) —
+    │   │                          built and evaluated, not yet wired into the CDK stack
     │   ├── sms-send/            → Outbound SMS (two-way patient outreach)
     │   └── sms-reply/           → Inbound SMS webhook handler
     ├── glue/
