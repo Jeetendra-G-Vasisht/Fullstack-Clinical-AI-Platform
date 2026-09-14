@@ -1,1 +1,5 @@
 langgraph==1.2.11
+
+# MCP server transport for mcp_server.py (not needed by lambda_function.py,
+# but kept in one requirements.txt for a single Lambda packaging step).
+mcp<2
