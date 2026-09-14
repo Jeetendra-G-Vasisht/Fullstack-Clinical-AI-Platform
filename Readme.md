@@ -105,6 +105,58 @@ A production-grade, HIPAA-conscious AI portal for healthcare document intelligen
 
 > **Diagram is a simplified historical sketch.** In practice, `kbuddhiai-chat` and `kbuddhiai-structured-query` are each invoked directly via their own **Lambda Function URL** (not through the API Gateway box shown above) — see "How AI Q&A Actually Works" below for the real request path. `kbuddhiai-structured-query` is a separate Lambda that isn't pictured here.
 
+### Multi-Agent Review Pipeline — internal architecture
+
+`review-pipeline` is a separate service (`infra/lambdas/review-pipeline/`), not part of the deployed AWS flow above. Two uniform entry points — an MCP server and a Lambda Function URL handler — both call the identical LangGraph orchestration underneath:
+
+```
+              MCP Client                          Function URL Caller
+                   │                                        │
+          ┌────────▼────────┐                    ┌──────────▼──────────┐
+          │  mcp_server.py   │                    │  lambda_function.py │
+          │  MCP tools:      │                    │  Function URL       │
+          │  • review_match  │                    │  handler            │
+          │  • list_review_  │                    └──────────┬──────────┘
+          │    thresholds    │                               │
+          └────────┬─────────┘                               │
+                    │              pipeline.run_review()      │
+                    └──────────────────┬───────────────────────┘
+                                       │
+                          ┌────────────▼────────────┐
+                          │   supervisor_decompose   │   supervisor: splits the
+                          │  (supervisor node)       │   task into 3 per-field
+                          └────────────┬────────────┘   subtasks, delegates
+                                       │
+                          ┌────────────▼────────────┐
+                          │       name_matcher        │
+                          └────────────┬────────────┘
+                                       │
+                          ┌────────────▼────────────┐   specialized workers —
+                          │       dob_matcher         │   each owns one field,
+                          └────────────┬────────────┘   returns a score AND
+                                       │                its own confidence
+                          ┌────────────▼────────────┐
+                          │    identifier_matcher     │
+                          └────────────┬────────────┘
+                                       │
+                          ┌────────────▼────────────┐
+                          │   supervisor_aggregate    │   supervisor: reconciles
+                          │  (ranks candidates, one   │   worker output into one
+                          │   overall confidence)     │   decision
+                          └────────────┬────────────┘
+                                       │
+                          ┌────────────▼────────────┐
+                          │   route_after_aggregate   │   the self-check gate —
+                          │     (self-check gate)     │   confidence-gated action
+                          └──┬──────────┬──────────┬─┘   selection
+                             │          │          │
+                   ┌─────────▼┐  ┌──────▼───────┐ ┌▼───────────────────┐
+                   │resolve_  │  │resolve_match  │ │needs_human_review  │
+                   │no_match  │  │(auto-resolved)│ │(escalated —        │
+                   │          │  │               │ │ not guessed)       │
+                   └──────────┘  └───────────────┘ └─────────────────────┘
+```
+
 ---
 
 ## Authentication Flow
@@ -224,8 +276,6 @@ A separate service, `infra/lambdas/review-pipeline/`, built around the orchestra
 | Cases routed to human review instead of guessed | 0% | 25% (15/60) |
 
 Of the escalated cases, 40% would have been wrong had the pipeline been forced to guess — the gate targets genuinely ambiguous cases, not firing at random. Full methodology, per-case results, and how to reproduce these numbers: `infra/lambdas/review-pipeline/README.md`.
-
-**What this project doesn't cover.** Stated plainly, since it's a small, bounded pipeline, not a general orchestration platform: no async event bus / pub-sub between agents (this graph runs one supervisor → 3 workers → aggregate, synchronously, per case — no backpressure, retry, or ordering guarantees across concurrent agents); no persistent cross-session memory or knowledge/spatial graph (LangGraph here is a control-flow graph for one invocation, not a state store agents read/write across sessions); no self-reflection loop with backtracking or retry (the gate escalates instead of the pipeline re-attempting its own reasoning); no long-horizon context management (each case is one short-lived graph run, not a multi-hour operation needing summarization or pruning); no browser/computer-use/sandboxed execution tools; Python only, no Go.
 
 **Status:** built and evaluated in this repo; intentionally not yet wired into `infra/lib/kbuddhiai-stack.ts` or deployed.
 
