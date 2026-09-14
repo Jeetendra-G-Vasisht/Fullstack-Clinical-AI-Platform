@@ -1,0 +1,1100 @@
+{
+  "baseline": {
+    "mode": "baseline_no_gate",
+    "total_cases": 60,
+    "accuracy": 0.7333333333333333,
+    "per_case": [
+      {
+        "case_id": "ambiguous_0",
+        "category": "ambiguous",
+        "expected": "p1",
+        "got": "p1",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_1",
+        "category": "noisy_correct",
+        "expected": "p4",
+        "got": "p4",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_2",
+        "category": "no_match",
+        "expected": null,
+        "got": "p6",
+        "status": "matched",
+        "confidence": 0.08697887970615241,
+        "correct": false
+      },
+      {
+        "case_id": "clean_3",
+        "category": "clean",
+        "expected": "p10",
+        "got": "p10",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_4",
+        "category": "clean",
+        "expected": "p13",
+        "got": "p13",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_5",
+        "category": "noisy_correct",
+        "expected": "p16",
+        "got": "p16",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_6",
+        "category": "no_match",
+        "expected": null,
+        "got": "p18",
+        "status": "matched",
+        "confidence": 0.09406863905325445,
+        "correct": false
+      },
+      {
+        "case_id": "nomatch_7",
+        "category": "no_match",
+        "expected": null,
+        "got": "p22",
+        "status": "matched",
+        "confidence": 0.24734299516908212,
+        "correct": false
+      },
+      {
+        "case_id": "noisy_8",
+        "category": "noisy_correct",
+        "expected": "p27",
+        "got": "p27",
+        "status": "matched",
+        "confidence": 0.9692307692307693,
+        "correct": true
+      },
+      {
+        "case_id": "clean_9",
+        "category": "clean",
+        "expected": "p31",
+        "got": "p31",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_10",
+        "category": "clean",
+        "expected": "p34",
+        "got": "p34",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_11",
+        "category": "ambiguous",
+        "expected": "p36",
+        "got": "p37",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": false
+      },
+      {
+        "case_id": "noisy_12",
+        "category": "noisy_correct",
+        "expected": "p42",
+        "got": "p42",
+        "status": "matched",
+        "confidence": 0.9666666666666668,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_13",
+        "category": "ambiguous",
+        "expected": "p45",
+        "got": "p44",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": false
+      },
+      {
+        "case_id": "noisy_14",
+        "category": "noisy_correct",
+        "expected": "p50",
+        "got": "p50",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_15",
+        "category": "ambiguous",
+        "expected": "p53",
+        "got": "p53",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_16",
+        "category": "clean",
+        "expected": "p58",
+        "got": "p58",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_17",
+        "category": "noisy_correct",
+        "expected": "p62",
+        "got": "p62",
+        "status": "matched",
+        "confidence": 0.9636363636363636,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_18",
+        "category": "no_match",
+        "expected": null,
+        "got": "p64",
+        "status": "matched",
+        "confidence": 0.012137703566274997,
+        "correct": false
+      },
+      {
+        "case_id": "clean_19",
+        "category": "clean",
+        "expected": "p68",
+        "got": "p68",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_20",
+        "category": "noisy_correct",
+        "expected": "p71",
+        "got": "p71",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_21",
+        "category": "clean",
+        "expected": "p75",
+        "got": "p75",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_22",
+        "category": "no_match",
+        "expected": null,
+        "got": "p79",
+        "status": "matched",
+        "confidence": 0.17817599999999997,
+        "correct": false
+      },
+      {
+        "case_id": "noisy_23",
+        "category": "noisy_correct",
+        "expected": "p83",
+        "got": "p83",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_24",
+        "category": "ambiguous",
+        "expected": "p86",
+        "got": "p86",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_25",
+        "category": "noisy_correct",
+        "expected": "p91",
+        "got": "p91",
+        "status": "matched",
+        "confidence": 0.8800000000000001,
+        "correct": true
+      },
+      {
+        "case_id": "clean_26",
+        "category": "clean",
+        "expected": "p95",
+        "got": "p95",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_27",
+        "category": "ambiguous",
+        "expected": "p97",
+        "got": "p98",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": false
+      },
+      {
+        "case_id": "noisy_28",
+        "category": "noisy_correct",
+        "expected": "p102",
+        "got": "p102",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_29",
+        "category": "no_match",
+        "expected": null,
+        "got": "p104",
+        "status": "matched",
+        "confidence": 0.024777315689981094,
+        "correct": false
+      },
+      {
+        "case_id": "clean_30",
+        "category": "clean",
+        "expected": "p109",
+        "got": "p109",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_31",
+        "category": "noisy_correct",
+        "expected": "p113",
+        "got": "p113",
+        "status": "matched",
+        "confidence": 0.8800000000000001,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_32",
+        "category": "ambiguous",
+        "expected": "p116",
+        "got": "p116",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_33",
+        "category": "noisy_correct",
+        "expected": "p121",
+        "got": "p121",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_34",
+        "category": "ambiguous",
+        "expected": "p123",
+        "got": "p123",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_35",
+        "category": "clean",
+        "expected": "p128",
+        "got": "p128",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_36",
+        "category": "ambiguous",
+        "expected": "p130",
+        "got": "p131",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": false
+      },
+      {
+        "case_id": "ambiguous_37",
+        "category": "ambiguous",
+        "expected": "p134",
+        "got": "p133",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": false
+      },
+      {
+        "case_id": "noisy_38",
+        "category": "noisy_correct",
+        "expected": "p138",
+        "got": "p138",
+        "status": "matched",
+        "confidence": 0.96,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_39",
+        "category": "no_match",
+        "expected": null,
+        "got": "p140",
+        "status": "matched",
+        "confidence": 0.04444444444444446,
+        "correct": false
+      },
+      {
+        "case_id": "clean_40",
+        "category": "clean",
+        "expected": "p145",
+        "got": "p145",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_41",
+        "category": "ambiguous",
+        "expected": "p148",
+        "got": "p147",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": false
+      },
+      {
+        "case_id": "nomatch_42",
+        "category": "no_match",
+        "expected": null,
+        "got": "p153",
+        "status": "matched",
+        "confidence": 0.0032262129804662906,
+        "correct": false
+      },
+      {
+        "case_id": "clean_43",
+        "category": "clean",
+        "expected": "p156",
+        "got": "p156",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_44",
+        "category": "noisy_correct",
+        "expected": "p160",
+        "got": "p160",
+        "status": "matched",
+        "confidence": 0.9636363636363636,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_45",
+        "category": "ambiguous",
+        "expected": "p162",
+        "got": "p162",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_46",
+        "category": "clean",
+        "expected": "p166",
+        "got": "p166",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_47",
+        "category": "noisy_correct",
+        "expected": "p170",
+        "got": "p170",
+        "status": "matched",
+        "confidence": 0.96,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_48",
+        "category": "no_match",
+        "expected": null,
+        "got": "p172",
+        "status": "matched",
+        "confidence": 0.003742690058479529,
+        "correct": false
+      },
+      {
+        "case_id": "ambiguous_49",
+        "category": "ambiguous",
+        "expected": "p176",
+        "got": "p176",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_50",
+        "category": "clean",
+        "expected": "p181",
+        "got": "p181",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_51",
+        "category": "no_match",
+        "expected": null,
+        "got": "p183",
+        "status": "matched",
+        "confidence": 0.007727064849538089,
+        "correct": false
+      },
+      {
+        "case_id": "clean_52",
+        "category": "clean",
+        "expected": "p188",
+        "got": "p188",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_53",
+        "category": "clean",
+        "expected": "p191",
+        "got": "p191",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_54",
+        "category": "clean",
+        "expected": "p195",
+        "got": "p195",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_55",
+        "category": "clean",
+        "expected": "p199",
+        "got": "p199",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_56",
+        "category": "ambiguous",
+        "expected": "p201",
+        "got": "p201",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_57",
+        "category": "clean",
+        "expected": "p205",
+        "got": "p205",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_58",
+        "category": "clean",
+        "expected": "p209",
+        "got": "p209",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_59",
+        "category": "ambiguous",
+        "expected": "p212",
+        "got": "p212",
+        "status": "matched",
+        "confidence": 0.0,
+        "correct": true
+      }
+    ]
+  },
+  "gated": {
+    "mode": "gated_self_check",
+    "total_cases": 60,
+    "auto_resolved_count": 45,
+    "accuracy_on_auto_resolved": 1.0,
+    "escalated_count": 15,
+    "escalation_rate": 0.25,
+    "escalated_would_have_been_wrong_fraction": 0.4,
+    "per_case": [
+      {
+        "case_id": "ambiguous_0",
+        "category": "ambiguous",
+        "expected": "p1",
+        "got": "p1",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "noisy_1",
+        "category": "noisy_correct",
+        "expected": "p4",
+        "got": "p4",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_2",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.08697887970615241,
+        "correct": true
+      },
+      {
+        "case_id": "clean_3",
+        "category": "clean",
+        "expected": "p10",
+        "got": "p10",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_4",
+        "category": "clean",
+        "expected": "p13",
+        "got": "p13",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_5",
+        "category": "noisy_correct",
+        "expected": "p16",
+        "got": "p16",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_6",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.09406863905325445,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_7",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.24734299516908212,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_8",
+        "category": "noisy_correct",
+        "expected": "p27",
+        "got": "p27",
+        "status": "matched",
+        "confidence": 0.9692307692307693,
+        "correct": true
+      },
+      {
+        "case_id": "clean_9",
+        "category": "clean",
+        "expected": "p31",
+        "got": "p31",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_10",
+        "category": "clean",
+        "expected": "p34",
+        "got": "p34",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_11",
+        "category": "ambiguous",
+        "expected": "p36",
+        "got": "p37",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "noisy_12",
+        "category": "noisy_correct",
+        "expected": "p42",
+        "got": "p42",
+        "status": "matched",
+        "confidence": 0.9666666666666668,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_13",
+        "category": "ambiguous",
+        "expected": "p45",
+        "got": "p44",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "noisy_14",
+        "category": "noisy_correct",
+        "expected": "p50",
+        "got": "p50",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_15",
+        "category": "ambiguous",
+        "expected": "p53",
+        "got": "p53",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "clean_16",
+        "category": "clean",
+        "expected": "p58",
+        "got": "p58",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_17",
+        "category": "noisy_correct",
+        "expected": "p62",
+        "got": "p62",
+        "status": "matched",
+        "confidence": 0.9636363636363636,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_18",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.012137703566274997,
+        "correct": true
+      },
+      {
+        "case_id": "clean_19",
+        "category": "clean",
+        "expected": "p68",
+        "got": "p68",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_20",
+        "category": "noisy_correct",
+        "expected": "p71",
+        "got": "p71",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_21",
+        "category": "clean",
+        "expected": "p75",
+        "got": "p75",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_22",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.17817599999999997,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_23",
+        "category": "noisy_correct",
+        "expected": "p83",
+        "got": "p83",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_24",
+        "category": "ambiguous",
+        "expected": "p86",
+        "got": "p86",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "noisy_25",
+        "category": "noisy_correct",
+        "expected": "p91",
+        "got": "p91",
+        "status": "matched",
+        "confidence": 0.8800000000000001,
+        "correct": true
+      },
+      {
+        "case_id": "clean_26",
+        "category": "clean",
+        "expected": "p95",
+        "got": "p95",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_27",
+        "category": "ambiguous",
+        "expected": "p97",
+        "got": "p98",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "noisy_28",
+        "category": "noisy_correct",
+        "expected": "p102",
+        "got": "p102",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_29",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.024777315689981094,
+        "correct": true
+      },
+      {
+        "case_id": "clean_30",
+        "category": "clean",
+        "expected": "p109",
+        "got": "p109",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_31",
+        "category": "noisy_correct",
+        "expected": "p113",
+        "got": "p113",
+        "status": "matched",
+        "confidence": 0.8800000000000001,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_32",
+        "category": "ambiguous",
+        "expected": "p116",
+        "got": "p116",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "noisy_33",
+        "category": "noisy_correct",
+        "expected": "p121",
+        "got": "p121",
+        "status": "matched",
+        "confidence": 0.7,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_34",
+        "category": "ambiguous",
+        "expected": "p123",
+        "got": "p123",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "clean_35",
+        "category": "clean",
+        "expected": "p128",
+        "got": "p128",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_36",
+        "category": "ambiguous",
+        "expected": "p130",
+        "got": "p131",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "ambiguous_37",
+        "category": "ambiguous",
+        "expected": "p134",
+        "got": "p133",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "noisy_38",
+        "category": "noisy_correct",
+        "expected": "p138",
+        "got": "p138",
+        "status": "matched",
+        "confidence": 0.96,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_39",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.04444444444444446,
+        "correct": true
+      },
+      {
+        "case_id": "clean_40",
+        "category": "clean",
+        "expected": "p145",
+        "got": "p145",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_41",
+        "category": "ambiguous",
+        "expected": "p148",
+        "got": "p147",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "nomatch_42",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.0032262129804662906,
+        "correct": true
+      },
+      {
+        "case_id": "clean_43",
+        "category": "clean",
+        "expected": "p156",
+        "got": "p156",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_44",
+        "category": "noisy_correct",
+        "expected": "p160",
+        "got": "p160",
+        "status": "matched",
+        "confidence": 0.9636363636363636,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_45",
+        "category": "ambiguous",
+        "expected": "p162",
+        "got": "p162",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "clean_46",
+        "category": "clean",
+        "expected": "p166",
+        "got": "p166",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "noisy_47",
+        "category": "noisy_correct",
+        "expected": "p170",
+        "got": "p170",
+        "status": "matched",
+        "confidence": 0.96,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_48",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.003742690058479529,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_49",
+        "category": "ambiguous",
+        "expected": "p176",
+        "got": "p176",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "clean_50",
+        "category": "clean",
+        "expected": "p181",
+        "got": "p181",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "nomatch_51",
+        "category": "no_match",
+        "expected": null,
+        "got": null,
+        "status": "no_match",
+        "confidence": 0.007727064849538089,
+        "correct": true
+      },
+      {
+        "case_id": "clean_52",
+        "category": "clean",
+        "expected": "p188",
+        "got": "p188",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_53",
+        "category": "clean",
+        "expected": "p191",
+        "got": "p191",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_54",
+        "category": "clean",
+        "expected": "p195",
+        "got": "p195",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_55",
+        "category": "clean",
+        "expected": "p199",
+        "got": "p199",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_56",
+        "category": "ambiguous",
+        "expected": "p201",
+        "got": "p201",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      },
+      {
+        "case_id": "clean_57",
+        "category": "clean",
+        "expected": "p205",
+        "got": "p205",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "clean_58",
+        "category": "clean",
+        "expected": "p209",
+        "got": "p209",
+        "status": "matched",
+        "confidence": 1.0,
+        "correct": true
+      },
+      {
+        "case_id": "ambiguous_59",
+        "category": "ambiguous",
+        "expected": "p212",
+        "got": "p212",
+        "status": "needs_human_review",
+        "confidence": 0.0,
+        "correct": null
+      }
+    ]
+  }
+}
