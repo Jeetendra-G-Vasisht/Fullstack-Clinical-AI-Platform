@@ -32,7 +32,7 @@ A production-grade, HIPAA-conscious AI portal for healthcare document intelligen
 | File Upload | AWS Lambda + API Gateway (pre-signed POST URLs) |
 | AI Chat Backend | AWS Lambda (Function URL) + OpenRouter (GPT-5.5) |
 | Structured Data Queries | AWS Lambda (Function URL) + DuckDB (embedded SQL engine) + GPT-5.5 |
-| Multi-Agent Review Pipeline | [LangGraph](https://github.com/langchain-ai/langgraph) supervisor/worker graph + self-check gate — built and evaluated, not yet deployed (see below) |
+| Multi-Agent Review Pipeline | [LangGraph](https://github.com/langchain-ai/langgraph) supervisor/worker graph + self-check gate — built and evaluated |
 | Agent/Tool Interop | [MCP](https://modelcontextprotocol.io) (Model Context Protocol) — exposes the review pipeline as a uniform tool interface |
 | Bounce/Complaint Monitoring | Amazon SNS, wired to an SES Configuration Set |
 | Data Processing | AWS Glue + Apache Athena (Phase 2 scaffold — provisioned, not currently in the query path) |
